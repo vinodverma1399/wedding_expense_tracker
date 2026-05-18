@@ -126,9 +126,9 @@ const GuestManagement = () => {
   const totalDeclined = guests.filter(g => g.rsvpStatus === 'Declined').length;
 
   return (
-    <div className="flex bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-300">
+    <div className="flex flex-col md:flex-row bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-300">
       <Sidebar />
-      <div className="flex-1 md:ml-64 p-8">
+      <div className="flex-1 md:ml-64 p-4 md:p-8 pb-24 md:pb-8">
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{t('guestManagement')}</h1>
