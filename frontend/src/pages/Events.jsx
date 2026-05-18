@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import { Plus, Trash2, Edit2, Calendar, MapPin, IndianRupee } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AuthContext } from '../context/AuthContext';
+import AuthRequiredModal from '../components/AuthRequiredModal';
+import { demoWedding, demoEvents } from '../utils/demoData';
 
 const EVENT_TYPES = ['Haldi', 'Mehendi', 'Sangeet', 'Wedding', 'Reception', 'Engagement', 'Other'];
 const EVENT_STYLES = {
@@ -18,6 +21,7 @@ const EVENT_STYLES = {
 
 const Events = () => {
   const { t } = useTranslation();
+  const { user } = useContext(AuthContext);
   const [weddings, setWeddings] = useState([]);
   const [selectedWedding, setSelectedWedding] = useState(null);
   const [events, setEvents] = useState([]);
@@ -25,8 +29,22 @@ const Events = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [form, setForm] = useState({ name: 'Wedding', date: '', budget: '', venue: '', notes: '' });
 
-  useEffect(() => { fetchWeddings(); }, []);
-  useEffect(() => { if (selectedWedding) fetchEvents(); }, [selectedWedding]);
+  // Auth Modal states for Guest/Demo Mode
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authActionName, setAuthActionName] = useState('');
+
+  useEffect(() => {
+    if (!user) {
+      // Instantly load mock wedding & events data if no user is signed in
+      setWeddings([demoWedding]);
+      setSelectedWedding(demoWedding);
+      setEvents(demoEvents);
+    } else {
+      fetchWeddings();
+    }
+  }, [user]);
+
+  useEffect(() => { if (selectedWedding && user) fetchEvents(); }, [selectedWedding, user]);
 
   const fetchWeddings = async () => {
     try {
@@ -78,6 +96,11 @@ const Events = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!user) {
+      setAuthActionName('delete wedding events');
+      setIsAuthModalOpen(true);
+      return;
+    }
     if (!window.confirm('Delete this event?')) return;
     try {
       await api.delete(`/events/delete/${id}`);
@@ -107,7 +130,15 @@ const Events = () => {
                 {weddings.map(w => <option key={w._id} value={w._id}>{w.weddingName}</option>)}
               </select>
             )}
-            <button onClick={() => { resetForm(); setShowForm(true); }} className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition font-medium flex items-center gap-2">
+            <button onClick={() => {
+              if (!user) {
+                setAuthActionName('add wedding events');
+                setIsAuthModalOpen(true);
+              } else {
+                resetForm();
+                setShowForm(true);
+              }
+            }} className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition font-medium flex items-center gap-2 cursor-pointer">
               <Plus size={18} /> {t('events')}
             </button>
           </div>
@@ -184,8 +215,15 @@ const Events = () => {
                         <div className="flex justify-between items-start mb-3">
                           <span className={`${style.bg} text-white text-xs font-bold px-3 py-1 rounded-full`}>{t(ev.name.toLowerCase()) || ev.name}</span>
                           <div className="flex gap-1">
-                            <button onClick={() => handleEdit(ev)} className="p-1 text-gray-500 hover:text-blue-500 transition"><Edit2 size={15}/></button>
-                            <button onClick={() => handleDelete(ev._id)} className="p-1 text-gray-500 hover:text-red-500 transition"><Trash2 size={15}/></button>
+                            <button onClick={() => {
+                              if (!user) {
+                                setAuthActionName('edit wedding event details');
+                                setIsAuthModalOpen(true);
+                              } else {
+                                handleEdit(ev);
+                              }
+                            }} className="p-1 text-gray-500 hover:text-blue-500 transition cursor-pointer"><Edit2 size={15}/></button>
+                            <button onClick={() => handleDelete(ev._id)} className="p-1 text-gray-500 hover:text-red-500 transition cursor-pointer"><Trash2 size={15}/></button>
                           </div>
                         </div>
                         {ev.date && (
@@ -222,7 +260,7 @@ const Events = () => {
                       <div key={ev._id} className="border dark:border-gray-700 rounded-xl p-5 shadow-sm bg-white dark:bg-gray-900">
                         <div className="flex justify-between items-start mb-2">
                           <span className="bg-gray-400 text-white text-xs font-bold px-3 py-1 rounded-full">{t(ev.name.toLowerCase()) || ev.name} ✓</span>
-                          <button onClick={() => handleDelete(ev._id)} className="p-1 text-gray-400 hover:text-red-500 transition"><Trash2 size={15}/></button>
+                          <button onClick={() => handleDelete(ev._id)} className="p-1 text-gray-400 hover:text-red-500 transition cursor-pointer"><Trash2 size={15}/></button>
                         </div>
                         {ev.date && <p className="text-sm text-gray-500 dark:text-gray-400">{new Date(ev.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>}
                         {ev.venue && <p className="text-xs text-gray-400 mt-1">{ev.venue}</p>}
@@ -235,6 +273,11 @@ const Events = () => {
           </div>
         )}
       </div>
+      <AuthRequiredModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        actionName={authActionName} 
+      />
     </div>
   );
 };
