@@ -1,4 +1,10 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Prioritize IPv4 over IPv6 to prevent ENETUNREACH errors on networks with limited IPv6 routing
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
