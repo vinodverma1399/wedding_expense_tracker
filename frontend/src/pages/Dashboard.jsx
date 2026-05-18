@@ -8,12 +8,15 @@ import CreateWeddingForm from '../components/CreateWeddingForm';
 import AddExpenseForm from '../components/AddExpenseForm';
 import AddVendorForm from '../components/AddVendorForm';
 import InviteMemberModal from '../components/InviteMemberModal';
+import AuthRequiredModal from '../components/AuthRequiredModal';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { toast } from 'react-toastify';
 import { Plus, Users } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import { demoWedding, demoExpenses, demoVendors } from '../utils/demoData';
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -31,10 +34,22 @@ const Dashboard = () => {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  
+  // Auth Modal states for Guest/Demo Mode
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authActionName, setAuthActionName] = useState('');
 
   useEffect(() => {
-    fetchWeddings();
-  }, []);
+    if (!user) {
+      // Instantly load mock wedding data if no user is signed in
+      setWeddings([demoWedding]);
+      setSelectedWedding(demoWedding);
+      setExpenses(demoExpenses);
+      setVendors(demoVendors);
+    } else {
+      fetchWeddings();
+    }
+  }, [user]);
 
   const fetchWeddings = async () => {
     try {
@@ -50,7 +65,7 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (selectedWedding) {
+    if (selectedWedding && user) {
       const fetchWeddingDetails = async () => {
         try {
           const [expensesRes, vendorsRes] = await Promise.all([
@@ -84,7 +99,7 @@ const Dashboard = () => {
         socket.disconnect();
       };
     }
-  }, [selectedWedding]);
+  }, [selectedWedding, user]);
 
   const handleWeddingCreated = (newWedding) => {
     setIsWeddingModalOpen(false);
@@ -95,6 +110,11 @@ const Dashboard = () => {
 
   const handleDeleteWedding = async () => {
     if (!selectedWedding) return;
+    if (!user) {
+      setAuthActionName('delete a wedding workspace');
+      setIsAuthModalOpen(true);
+      return;
+    }
     if (window.confirm(`Are you sure you want to completely delete "${selectedWedding.weddingName}" and all of its expenses and vendors? This action cannot be undone.`)) {
       try {
         await api.delete(`/wedding/delete/${selectedWedding._id}`);
@@ -150,12 +170,12 @@ const Dashboard = () => {
     <div className="flex bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-300">
       <Sidebar />
       <div className="flex-1 md:ml-64 p-8">
-        <header className="flex justify-between items-center mb-8">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Welcome, {user?.name}</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-gray-800 dark:text-white">Welcome, {user?.name || 'Guest'}</h1>
             <p className="text-gray-500 dark:text-gray-400">Manage your wedding expenses efficiently.</p>
           </div>
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-4 items-center self-stretch md:self-auto justify-end">
             <NotificationBell selectedWedding={selectedWedding} />
             {weddings.length > 0 && (
               <div className="flex gap-2 items-center">
@@ -179,18 +199,57 @@ const Dashboard = () => {
             )}
             {selectedWedding && (
               <button 
-                onClick={() => setIsInviteModalOpen(true)}
+                onClick={() => {
+                  if (!user) {
+                    setAuthActionName('invite family members');
+                    setIsAuthModalOpen(true);
+                  } else {
+                    setIsInviteModalOpen(true);
+                  }
+                }}
                 className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition shadow-sm font-medium flex items-center gap-1">
                 <Users size={18}/> Invite
               </button>
             )}
             <button 
-              onClick={() => setIsWeddingModalOpen(true)}
+              onClick={() => {
+                if (!user) {
+                  setAuthActionName('create a wedding workspace');
+                  setIsAuthModalOpen(true);
+                } else {
+                  setIsWeddingModalOpen(true);
+                }
+              }}
               className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition shadow-sm font-medium flex items-center gap-1">
               <Plus size={18}/> New Wedding
             </button>
           </div>
         </header>
+
+        {/* Demo Mode Premium Warning Banner */}
+        {!user && (
+          <div className="bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-purple-200/40 dark:border-purple-800/30 rounded-2xl p-6 mb-8 backdrop-blur-md flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm animate-fadeIn">
+            <div className="flex gap-4 items-center text-left">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold shadow-md shadow-purple-500/20 flex-shrink-0 animate-bounce">
+                ✨
+              </div>
+              <div>
+                <h3 className="font-extrabold text-gray-800 dark:text-white text-lg">Exploring in Demo Mode</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 max-w-xl">
+                  You are currently browsing the live workspace of <b>Pooja & Rahul's Wedding</b>. Create your own wedding account to start logging expenses, tracking vendors, and inviting family!
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 w-full md:w-auto">
+              <Link to="/login" className="flex-1 md:flex-none text-center bg-gradient-to-r from-primary to-purple-800 hover:from-purple-800 hover:to-indigo-900 text-white text-sm font-bold px-5 py-3 rounded-xl transition duration-300 shadow-md shadow-purple-600/10">
+                Log In
+              </Link>
+              <Link to="/register" className="flex-1 md:flex-none text-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm font-bold px-5 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-750 transition duration-300">
+                Sign Up
+              </Link>
+            </div>
+          </div>
+        )}
 
         {weddings.length === 0 ? (
           <div className="bg-white dark:bg-gray-900 p-12 rounded-xl shadow-sm text-center border border-dashed border-gray-300 dark:border-gray-700">
@@ -227,7 +286,14 @@ const Dashboard = () => {
               <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm lg:col-span-2">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold text-gray-800 dark:text-white">{t('recentExpenses')}</h3>
-                  <button onClick={() => setIsExpenseModalOpen(true)} className="text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-md flex items-center gap-1 transition">
+                  <button onClick={() => {
+                    if (!user) {
+                      setAuthActionName('add expenses');
+                      setIsAuthModalOpen(true);
+                    } else {
+                      setIsExpenseModalOpen(true);
+                    }
+                  }} className="text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-md flex items-center gap-1 transition cursor-pointer">
                     <Plus size={16}/> {t('addExpense')}
                   </button>
                 </div>
@@ -285,7 +351,14 @@ const Dashboard = () => {
             <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white">{t('vendors')}</h3>
-                <button onClick={() => setIsVendorModalOpen(true)} className="text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-md flex items-center gap-1 transition">
+                <button onClick={() => {
+                  if (!user) {
+                    setAuthActionName('add vendors');
+                    setIsAuthModalOpen(true);
+                  } else {
+                    setIsVendorModalOpen(true);
+                  }
+                }} className="text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-md flex items-center gap-1 transition cursor-pointer">
                   <Plus size={16}/> {t('addVendor')}
                 </button>
               </div>
@@ -391,6 +464,12 @@ const Dashboard = () => {
         <Modal isOpen={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} title="Invite Family Member">
           <InviteMemberModal weddingId={selectedWedding?._id} onClose={() => setIsInviteModalOpen(false)} />
         </Modal>
+
+        <AuthRequiredModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+          actionName={authActionName} 
+        />
 
       </div>
     </div>
