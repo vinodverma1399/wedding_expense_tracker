@@ -1,3 +1,9 @@
+const dns = require('dns');
+// Force IPv4 DNS resolution globally at server startup to prevent ENETUNREACH IPv6 issues
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
 const express = require('express');
 const dotenv = require('dotenv');
 dotenv.config();
