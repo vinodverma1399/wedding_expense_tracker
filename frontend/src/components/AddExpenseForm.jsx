@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import { Cpu, FileText } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const AddExpenseForm = ({ weddingId, onSuccess }) => {
+  const { user } = useContext(AuthContext);
+  const { t } = useTranslation();
+  
   const [formData, setFormData] = useState({
     category: 'Venue',
     amount: '',
     vendor: '',
     note: '',
     paymentStatus: 'Paid',
+    paidAmount: '',
     paymentMethod: 'Cash',
     expenseDate: new Date().toISOString().split('T')[0],
-    billUrl: ''
+    billUrl: '',
+    paidBy: user?.name || ''
   });
+  const [saveAsVendor, setSaveAsVendor] = useState(false);
+  const [vendorContact, setVendorContact] = useState('');
+  const [vendorBookedPrice, setVendorBookedPrice] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
@@ -192,7 +203,31 @@ const AddExpenseForm = ({ weddingId, onSuccess }) => {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.post('/expense/add', { ...formData, weddingId });
+      const payload = {
+        ...formData,
+        paymentMethod: formData.paymentStatus === 'Pending' ? 'Other' : formData.paymentMethod,
+        weddingId
+      };
+      const { data } = await api.post('/expense/add', payload);
+      
+      // If saveAsVendor is checked, automatically create a vendor directory contact in the background
+      if (saveAsVendor && formData.vendor) {
+        try {
+          await api.post('/vendor/add', {
+            weddingId,
+            vendorName: formData.vendor,
+            serviceType: formData.category,
+            totalAmount: Number(vendorBookedPrice) || Number(formData.amount) || 0,
+            advancePaid: Number(formData.paidAmount) || (formData.paymentStatus === 'Paid' ? Number(formData.amount) : 0),
+            contactNumber: vendorContact || ''
+          });
+          toast.success('🤖 Vendor directory contact registered successfully!');
+        } catch (vErr) {
+          console.error('Failed to auto-register vendor:', vErr);
+          toast.warning('⚠️ Expense saved, but vendor registration failed.');
+        }
+      }
+
       onSuccess(data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to add expense');
@@ -207,64 +242,137 @@ const AddExpenseForm = ({ weddingId, onSuccess }) => {
       
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('category')}</label>
           <select name="category" value={formData.category} onChange={handleChange} 
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none">
-            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+            {categories.map(cat => <option key={cat} value={cat}>{t(cat.toLowerCase()) || cat}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('amount')} (₹)</label>
           <input type="number" name="amount" required value={formData.amount} onChange={handleChange} 
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+            className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Vendor/Person (Optional)</label>
-          <input type="text" name="vendor" value={formData.vendor} onChange={handleChange} 
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('vendor')} / {t('person')} ({t('optional')})</label>
+          <input 
+            type="text" 
+            name="vendor" 
+            value={formData.vendor} 
+            onChange={handleChange} 
+            placeholder="e.g. Catering Co."
+            className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" 
+          />
+          {formData.vendor && (
+            <div className="mt-2.5 p-3 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/30 rounded-xl">
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="saveAsVendor" 
+                  checked={saveAsVendor} 
+                  onChange={(e) => setSaveAsVendor(e.target.checked)} 
+                  className="rounded border-gray-300 dark:border-gray-700 text-primary focus:ring-primary cursor-pointer w-4 h-4"
+                />
+                <label htmlFor="saveAsVendor" className="text-xs font-bold text-purple-700 dark:text-purple-400 cursor-pointer select-none">
+                  ✨ Save as Registered Vendor?
+                </label>
+              </div>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                💡 <strong>Why register?</strong> Saving this will instantly register `{formData.vendor}` in your central <strong>Vendor Directory</strong> so you can keep their phone number and track deal totals in one place!
+              </p>
+            </div>
+          )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paid By (Member Name)</label>
+          <input type="text" name="paidBy" required value={formData.paidBy} onChange={handleChange} placeholder="e.g. Papa, Chacha, Self"
+            className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+        </div>
+      </div>
+
+      {saveAsVendor && formData.vendor && (
+        <div className="grid grid-cols-2 gap-4 p-3.5 bg-purple-50/40 dark:bg-purple-950/10 border border-purple-100 dark:border-purple-900/40 rounded-xl animate-fadeIn">
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+              Contact Number
+            </label>
+            <input 
+              type="text" 
+              value={vendorContact} 
+              onChange={(e) => setVendorContact(e.target.value)} 
+              placeholder="e.g. 9876543210"
+              className="w-full p-2 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" 
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+              Booked Deal Price (Deal Amount)
+            </label>
+            <input 
+              type="number" 
+              value={vendorBookedPrice} 
+              onChange={(e) => setVendorBookedPrice(e.target.value)} 
+              placeholder={formData.amount || "e.g. 50000"}
+              className="w-full p-2 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" 
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('date')}</label>
           <input type="date" name="expenseDate" required value={formData.expenseDate} onChange={handleChange} 
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+            className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('paymentStatus')}</label>
           <select name="paymentStatus" value={formData.paymentStatus} onChange={handleChange} 
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none">
-            <option value="Paid">Paid</option>
-            <option value="Pending">Pending</option>
-            <option value="Partial">Partial</option>
+            className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+            <option value="Paid">{t('paid')}</option>
+            <option value="Pending">{t('pending')}</option>
+            <option value="Partial">{t('partial')}</option>
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-          <select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} 
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none">
-            <option value="Cash">Cash</option>
-            <option value="Card">Card</option>
-            <option value="UPI">UPI</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
+        {formData.paymentStatus !== 'Pending' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('paymentMethod')}</label>
+            <select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} 
+              className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+              <option value="Cash">{t('cash')}</option>
+              <option value="Card">{t('card')}</option>
+              <option value="UPI">{t('upi')}</option>
+              <option value="Bank Transfer">{t('bankTransfer')}</option>
+              <option value="Other">{t('other')}</option>
+            </select>
+          </div>
+        )}
+        
+        {formData.paymentStatus === 'Partial' && (
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paid Amount (₹)</label>
+            <input type="number" name="paidAmount" required value={formData.paidAmount} onChange={handleChange} placeholder="Enter amount already paid"
+              className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+          </div>
+        )}
+        
         <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
             <Cpu size={16} className="text-purple-600 animate-pulse" />
             AI OCR Scanner & Receipt Attachment (Optional)
           </label>
-          <div className="border-2 border-dashed border-purple-200 dark:border-purple-900/60 rounded-xl p-3.5 bg-purple-50/30 dark:bg-purple-950/10 hover:bg-purple-50/60 transition">
+          <div className="border-2 border-dashed border-purple-200 dark:border-purple-900/60 rounded-xl p-3.5 bg-purple-50/30 dark:bg-purple-950/10 hover:bg-purple-50/60 dark:hover:bg-purple-900/20 transition">
             <input 
               type="file" 
               accept="image/*" 
               onChange={uploadFileHandler} 
-              className="w-full text-xs text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 dark:file:bg-purple-900/40 dark:file:text-purple-400 cursor-pointer"
+              className="w-full text-xs text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 dark:hover:file:bg-purple-900/60 dark:file:bg-purple-900/40 dark:file:text-purple-400 cursor-pointer"
             />
             <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">
               💡 <strong>Instant Auto-fill:</strong> Upload any invoice or receipt photo to automatically extract amount, vendor, date, and category.
@@ -292,15 +400,15 @@ const AddExpenseForm = ({ weddingId, onSuccess }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Note (Optional)</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('notes')} ({t('optional')})</label>
         <textarea name="note" value={formData.note} onChange={handleChange} rows="2"
-          className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"></textarea>
+          className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"></textarea>
       </div>
 
       <div className="pt-4">
         <button type="submit" disabled={loading || uploading} 
           className="w-full bg-primary text-white py-2 rounded-lg hover:bg-purple-800 transition font-medium disabled:opacity-50">
-          {loading ? 'Adding...' : 'Add Expense'}
+          {loading ? t('adding') : t('addExpense')}
         </button>
       </div>
     </form>

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import { Cpu, FileText } from 'lucide-react';
+import Modal from './Modal';
 
 const EditExpenseModal = ({ expense, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -12,12 +13,15 @@ const EditExpenseModal = ({ expense, onClose, onUpdate }) => {
     paymentStatus: expense.paymentStatus,
     paymentMethod: expense.paymentMethod,
     expenseDate: new Date(expense.expenseDate).toISOString().split('T')[0],
-    billUrl: expense.billUrl || ''
+    billUrl: expense.billUrl || '',
+    paidBy: expense.paidBy || 'Self',
+    paidAmount: expense.paidAmount || ''
   });
   
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
+
   const categories = ['Venue', 'Catering', 'Decoration', 'Photography', 'Jewellery', 'Travel', 'DJ', 'Makeup', 'Clothes', 'Gifts', 'Hotel', 'Other'];
 
   const handleChange = (e) => {
@@ -184,7 +188,11 @@ const EditExpenseModal = ({ expense, onClose, onUpdate }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await api.put(`/expense/update/${expense._id}`, formData);
+      const payload = {
+        ...formData,
+        paymentMethod: formData.paymentStatus === 'Pending' ? 'Other' : formData.paymentMethod
+      };
+      const { data } = await api.put(`/expense/update/${expense._id}`, payload);
       onUpdate(data);
       toast.success('Expense updated successfully');
       onClose();
@@ -195,69 +203,82 @@ const EditExpenseModal = ({ expense, onClose, onUpdate }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-bold text-gray-800">Edit Expense</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Modal isOpen={true} onClose={onClose} title="Edit Expense">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
               <select name="category" value={formData.category} onChange={handleChange} required
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                 {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount (₹)</label>
               <input type="number" name="amount" value={formData.amount} onChange={handleChange} required min="1"
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Vendor/Person (Optional)</label>
-              <input type="text" name="vendor" value={formData.vendor} onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor/Person (Optional)</label>
+              <input 
+                type="text" 
+                name="vendor" 
+                value={formData.vendor} 
+                onChange={handleChange}
+                placeholder="e.g. Catering Co."
+                className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" 
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paid By (Member Name)</label>
+              <input type="text" name="paidBy" value={formData.paidBy} onChange={handleChange} required
+                className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
               <input type="date" name="expenseDate" value={formData.expenseDate} onChange={handleChange} required
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Status</label>
               <select name="paymentStatus" value={formData.paymentStatus} onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                 <option value="Paid">Paid</option>
                 <option value="Pending">Pending</option>
                 <option value="Partial">Partial</option>
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-              <select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none">
-                <option value="Cash">Cash</option>
-                <option value="Card">Card</option>
-                <option value="UPI">UPI</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
+            {formData.paymentStatus !== 'Pending' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Method</label>
+                <select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange}
+                  className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            )}
+            {formData.paymentStatus === 'Partial' && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paid Amount (₹)</label>
+                <input type="number" name="paidAmount" required value={formData.paidAmount} onChange={handleChange} placeholder="Enter amount already paid"
+                  className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+              </div>
+            )}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
                 <Cpu size={16} className="text-purple-600 animate-pulse" />
                 AI OCR Scanner & Receipt Attachment
               </label>
-              <div className="border-2 border-dashed border-purple-200 dark:border-purple-900/60 rounded-xl p-3 bg-purple-50/30 dark:bg-purple-950/10 hover:bg-purple-50/60 transition">
+              <div className="border-2 border-dashed border-purple-200 dark:border-purple-900/60 rounded-xl p-3 bg-purple-50/30 dark:bg-purple-950/10 hover:bg-purple-50/60 dark:hover:bg-purple-900/20 transition">
                 <input 
                   type="file" 
                   accept="image/*"
                   onChange={uploadFileHandler} 
-                  className="w-full text-xs text-gray-500 file:mr-4 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 dark:file:bg-purple-900/40 dark:file:text-purple-400 cursor-pointer"
+                  className="w-full text-xs text-gray-500 file:mr-4 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 dark:hover:file:bg-purple-900/60 dark:file:bg-purple-900/40 dark:file:text-purple-400 cursor-pointer"
                 />
                 {ocrLoading && (
                   <div className="flex items-center gap-2 mt-2 text-xs font-semibold text-purple-600 dark:text-purple-400 animate-pulse">
@@ -290,19 +311,19 @@ const EditExpenseModal = ({ expense, onClose, onUpdate }) => {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Note (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Note (Optional)</label>
             <textarea name="note" value={formData.note} onChange={handleChange} rows="2"
-              className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"></textarea>
+              className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"></textarea>
           </div>
-          <div className="pt-4">
-            <button type="submit" disabled={loading || uploading} 
-              className="w-full bg-primary text-white py-2 rounded-lg hover:bg-purple-800 transition font-medium disabled:opacity-50">
-              {loading ? 'Updating...' : 'Update Expense'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+
+        <div className="pt-2">
+          <button type="submit" disabled={loading || uploading} 
+            className="w-full bg-primary text-white py-2 rounded-lg hover:bg-purple-800 transition font-medium disabled:opacity-50">
+            {loading ? 'Updating...' : 'Update Expense'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 };
 
