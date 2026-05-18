@@ -47,8 +47,8 @@ const AdminPanel = () => {
   return (
     <div className="flex flex-col md:flex-row bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-300">
       <Sidebar />
-      <div className="flex-1 md:ml-64 p-4 md:p-8 pb-24 md:pb-8">
-        <header className="flex justify-between items-center mb-8">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 pt-20 md:pt-8 pb-24 md:pb-8">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <Shield className="text-primary" /> Admin Command Center
@@ -110,10 +110,10 @@ const AdminPanel = () => {
 
             {/* Admin Tabs */}
             <div className="bg-white dark:bg-gray-900 rounded-xl border dark:border-gray-800 shadow-sm overflow-hidden">
-              <div className="border-b dark:border-gray-800 flex bg-gray-50 dark:bg-gray-800/50">
+              <div className="border-b dark:border-gray-800 flex overflow-x-auto scrollbar-none whitespace-nowrap bg-gray-50 dark:bg-gray-800/50 w-full">
                 <button
                   onClick={() => setActiveTab('stats')}
-                  className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 ${
+                  className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 flex-shrink-0 ${
                     activeTab === 'stats'
                       ? 'border-primary text-primary bg-white dark:bg-gray-900'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
@@ -123,7 +123,7 @@ const AdminPanel = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab('users')}
-                  className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 ${
+                  className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 flex-shrink-0 ${
                     activeTab === 'users'
                       ? 'border-primary text-primary bg-white dark:bg-gray-900'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
@@ -133,7 +133,7 @@ const AdminPanel = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab('weddings')}
-                  className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 ${
+                  className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 flex-shrink-0 ${
                     activeTab === 'weddings'
                       ? 'border-primary text-primary bg-white dark:bg-gray-900'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'

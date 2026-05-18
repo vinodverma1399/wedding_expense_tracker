@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Heart, Mail, Lock, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -62,22 +64,22 @@ const Login = () => {
             <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10">
               <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-300 font-bold">₹</div>
               <div>
-                <p className="font-semibold text-sm">Real-time Budget Analytics</p>
-                <p className="text-xs text-purple-200/60">Categorized expenses, advance-paid tracking, and instant budget updates.</p>
+                <p className="font-semibold text-sm">{t('loginFeature1Title')}</p>
+                <p className="text-xs text-purple-200/60">{t('loginFeature1Sub')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10">
               <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-300">👥</div>
               <div>
-                <p className="font-semibold text-sm">Family Collaboration</p>
-                <p className="text-xs text-purple-200/60">Invite family members with edit or view-only access, synced instantly via WebSockets.</p>
+                <p className="font-semibold text-sm">{t('loginFeature2Title')}</p>
+                <p className="text-xs text-purple-200/60">{t('loginFeature2Sub')}</p>
               </div>
             </div>
           </div>
         </div>
 
         <div className="relative z-10 text-sm text-purple-200/60 border-t border-white/10 pt-6">
-          © {new Date().getFullYear()} WET Workspace. Crafted with love.
+          © {new Date().getFullYear()} WET Workspace. {t('craftedWithLove')}
         </div>
       </div>
 
@@ -94,10 +96,10 @@ const Login = () => {
               <span className="text-xl font-bold tracking-wider dark:text-white">WET</span>
             </div>
             <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-              Welcome Back
+              {t('welcomeBack')}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Log in to manage your wedding workspace, or explore in demo mode.
+              {t('loginSubtitle')}
             </p>
           </div>
 
@@ -115,7 +117,7 @@ const Login = () => {
               {/* Email Input */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 block" htmlFor="email">
-                  Email Address
+                  {t('emailAddress')}
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
@@ -136,7 +138,7 @@ const Login = () => {
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <label className="text-xs font-semibold text-gray-600 dark:text-gray-300" htmlFor="password">
-                    Password
+                    {t('password')}
                   </label>
                 </div>
                 <div className="relative">
@@ -171,7 +173,7 @@ const Login = () => {
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
                   <>
-                    Log In <ArrowRight size={16} />
+                    {t('logIn')} <ArrowRight size={16} />
                   </>
                 )}
               </button>
@@ -180,7 +182,7 @@ const Login = () => {
 
             <div className="relative flex py-2 items-center">
               <div className="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
-              <span className="flex-shrink mx-4 text-gray-400 text-xs font-bold uppercase tracking-wider">or</span>
+              <span className="flex-shrink mx-4 text-gray-400 text-xs font-bold uppercase tracking-wider">{t('or')}</span>
               <div className="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
             </div>
 
@@ -191,14 +193,14 @@ const Login = () => {
               className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold rounded-xl transition duration-300 shadow-md shadow-pink-500/10 cursor-pointer"
             >
               <Sparkles size={18} />
-              Explore Demo Mode (No Login)
+              {t('exploreDemoMode')}
             </button>
 
             {/* Register Link */}
             <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
-              Don't have a wedding workspace?{' '}
+              {t('noAccount')}{' '}
               <Link to="/register" className="text-secondary dark:text-pink-400 font-semibold hover:underline">
-                Create Account
+                {t('createAccount')}
               </Link>
             </p>
 
