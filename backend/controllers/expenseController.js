@@ -1,9 +1,12 @@
 const Expense = require('../models/Expense');
 const Wedding = require('../models/Wedding');
+const Vendor = require('../models/Vendor');
+
+
 
 const addExpense = async (req, res) => {
   try {
-    const { weddingId, category, amount, vendor, note, paymentStatus, paymentMethod, expenseDate, billUrl } = req.body;
+    const { weddingId, category, amount, vendor, vendorId, note, paymentStatus, paymentMethod, expenseDate, billUrl, paidBy, paidAmount } = req.body;
     
     // Optional: check if wedding belongs to user or if user is a member
     const wedding = await Wedding.findById(weddingId);
@@ -12,17 +15,34 @@ const addExpense = async (req, res) => {
     }
 
     const isOwner = wedding.userId.toString() === req.user._id.toString();
-    const isMember = wedding.members && wedding.members.some(m => m.user.toString() === req.user._id.toString() && ['Admin', 'Editor'].includes(m.role));
+    const isMember = wedding.members && wedding.members.some(m => m.user.toString() === req.user._id.toString() && ['Admin', 'Editor', 'Contributor'].includes(m.role));
 
     if (!isOwner && !isMember) {
       return res.status(403).json({ message: 'Unauthorized to add expenses' });
     }
 
+    let parsedPaidAmount = Number(paidAmount) || 0;
+    if (paymentStatus === 'Paid') {
+      parsedPaidAmount = Number(amount);
+    } else if (paymentStatus === 'Pending') {
+      parsedPaidAmount = 0;
+    }
+    const remainingAmount = Number(amount) - parsedPaidAmount;
+
+    const paymentHistory = [];
+    if (parsedPaidAmount > 0) {
+      paymentHistory.push({
+        amountPaid: parsedPaidAmount,
+        paymentMethod: paymentMethod || 'Other',
+        paidAt: new Date()
+      });
+    }
+
     const expense = await Expense.create({
-      weddingId, category, amount, vendor, note, paymentStatus, paymentMethod, expenseDate, billUrl, addedBy: req.user._id
+      weddingId, category, amount, vendor, note, paymentStatus, paymentMethod, expenseDate, billUrl, paidBy: paidBy || 'Self', addedBy: req.user._id, paidAmount: parsedPaidAmount, remainingAmount, paymentHistory
     });
     
-    const populatedExpense = await Expense.findById(expense._id).populate('addedBy', 'name');
+    const populatedExpense = await Expense.findById(expense._id).populate('addedBy', 'name').populate('vendorId');
     
     // Real-time broadcast to all wedding members
     const io = req.app.get('io');
@@ -104,9 +124,23 @@ const addExpense = async (req, res) => {
 const getExpenses = async (req, res) => {
   try {
     const { weddingId } = req.params;
-    const expenses = await Expense.find({ weddingId })
+    const wedding = await Wedding.findById(weddingId);
+    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+    
+    let expensesQuery = { weddingId };
+
+    const isOwner = wedding.userId.toString() === req.user._id.toString();
+    const currentMember = wedding.members && wedding.members.find(m => m.user.toString() === req.user._id.toString());
+    
+    // Contributors can strictly only see expenses they added
+    if (!isOwner && currentMember && currentMember.role === 'Contributor') {
+      expensesQuery.addedBy = req.user._id;
+    }
+
+    const expenses = await Expense.find(expensesQuery)
                                   .populate('addedBy', 'name')
-                                  .sort({ expenseDate: -1 });
+                                  .populate('vendorId')
+                                  .sort({ expenseDate: -1, createdAt: -1 });
     res.json(expenses);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -118,9 +152,35 @@ const updateExpense = async (req, res) => {
     const expense = await Expense.findById(req.params.id);
     if (!expense) return res.status(404).json({ message: 'Expense not found' });
     
-    Object.assign(expense, req.body);
+    const { amount, paymentStatus, paidAmount, vendorId } = req.body;
+    let parsedPaidAmount = Number(paidAmount) || 0;
+    if (paymentStatus === 'Paid') {
+      parsedPaidAmount = Number(amount);
+    } else if (paymentStatus === 'Pending') {
+      parsedPaidAmount = 0;
+    } else if (paymentStatus === 'Partial' && paidAmount === undefined) {
+      // Keep existing paidAmount if not provided but it's partial
+      parsedPaidAmount = expense.paidAmount;
+    }
+    const remainingAmount = Number(amount) - parsedPaidAmount;
+    const deltaPaid = parsedPaidAmount - (expense.paidAmount || 0);
+
+    Object.assign(expense, req.body, { paidAmount: parsedPaidAmount, remainingAmount });
     const updatedExpense = await expense.save();
-    res.json(updatedExpense);
+
+    // If the expense has a vendor name, find and update the registered Vendor's advancePaid/remainingAmount
+    if (expense.vendor && expense.vendor.trim()) {
+      const allVendors = await Vendor.find({ weddingId: expense.weddingId });
+      const vendorDoc = allVendors.find(v => v.vendorName.toLowerCase().trim() === expense.vendor.toLowerCase().trim());
+      if (vendorDoc) {
+        vendorDoc.advancePaid = (vendorDoc.advancePaid || 0) + deltaPaid;
+        vendorDoc.remainingAmount = vendorDoc.totalAmount - vendorDoc.advancePaid;
+        await vendorDoc.save();
+      }
+    }
+    
+    const populated = await Expense.findById(updatedExpense._id).populate('addedBy', 'name').populate('vendorId');
+    res.json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -132,6 +192,18 @@ const deleteExpense = async (req, res) => {
     if (!expense) return res.status(404).json({ message: 'Expense not found' });
     
     await Expense.deleteOne({ _id: expense._id });
+    
+    // If the expense has a vendor and paid amount, update the registered Vendor's advancePaid/remainingAmount
+    if (expense.vendor && expense.vendor.trim() && expense.paidAmount > 0) {
+      const allVendors = await Vendor.find({ weddingId: expense.weddingId });
+      const vendorDoc = allVendors.find(v => v.vendorName.toLowerCase().trim() === expense.vendor.toLowerCase().trim());
+      if (vendorDoc) {
+        vendorDoc.advancePaid = Math.max(0, (vendorDoc.advancePaid || 0) - expense.paidAmount);
+        vendorDoc.remainingAmount = vendorDoc.totalAmount - vendorDoc.advancePaid;
+        await vendorDoc.save();
+      }
+    }
+    
     res.json({ message: 'Expense removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });
