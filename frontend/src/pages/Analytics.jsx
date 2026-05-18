@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
 import { AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
+import { demoWedding, demoExpenses, demoVendors } from '../utils/demoData';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 import { useTranslation } from 'react-i18next';
 
 const Analytics = () => {
   const { t } = useTranslation();
+  const { user } = useContext(AuthContext);
   const [weddings, setWeddings] = useState([]);
   const [selectedWedding, setSelectedWedding] = useState(null);
   const [expenses, setExpenses] = useState([]);
@@ -18,8 +21,16 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchWeddings();
-  }, []);
+    if (!user) {
+      setWeddings([demoWedding]);
+      setSelectedWedding(demoWedding);
+      setExpenses(demoExpenses);
+      setVendors(demoVendors);
+      setLoading(false);
+    } else {
+      fetchWeddings();
+    }
+  }, [user]);
 
   const fetchWeddings = async () => {
     try {
@@ -37,10 +48,10 @@ const Analytics = () => {
   };
 
   useEffect(() => {
-    if (selectedWedding) {
+    if (selectedWedding && user) {
       fetchData();
     }
-  }, [selectedWedding]);
+  }, [selectedWedding, user]);
 
   const fetchData = async () => {
     setLoading(true);
