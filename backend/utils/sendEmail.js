@@ -36,6 +36,7 @@ const sendEmail = async ({ to, subject, html }) => {
     return info;
   } catch (error) {
     console.error('Failed to send email notification:', error);
+    throw error;
   }
 };
 
