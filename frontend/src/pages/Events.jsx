@@ -4,8 +4,10 @@ import api from '../services/api';
 import { toast } from 'react-toastify';
 import { Plus, Trash2, Edit2, Calendar, MapPin, IndianRupee } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import AuthRequiredModal from '../components/AuthRequiredModal';
+import Modal from '../components/Modal';
 import { demoWedding, demoEvents } from '../utils/demoData';
 
 const EVENT_TYPES = ['Haldi', 'Mehendi', 'Sangeet', 'Wedding', 'Reception', 'Engagement', 'Other'];
@@ -22,6 +24,7 @@ const EVENT_STYLES = {
 const Events = () => {
   const { t } = useTranslation();
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [weddings, setWeddings] = useState([]);
   const [selectedWedding, setSelectedWedding] = useState(null);
   const [events, setEvents] = useState([]);
@@ -44,13 +47,30 @@ const Events = () => {
     }
   }, [user]);
 
-  useEffect(() => { if (selectedWedding && user) fetchEvents(); }, [selectedWedding, user]);
+  useEffect(() => { 
+    if (selectedWedding && user) {
+      const isOwner = selectedWedding.userId === user._id || selectedWedding.userId?._id === user._id;
+      const currentRole = selectedWedding.members?.find(m => m.user._id === user._id || m.user === user._id)?.role;
+      if (!isOwner && currentRole === 'Contributor') {
+         navigate('/expenses');
+         return;
+      }
+      fetchEvents(); 
+    }
+  }, [selectedWedding, user]);
 
   const fetchWeddings = async () => {
     try {
       const { data } = await api.get('/wedding/all');
       setWeddings(data);
-      if (data.length > 0) setSelectedWedding(data[0]);
+      if (data.length > 0) {
+        const savedId = localStorage.getItem('selectedWeddingId');
+        const found = data.find(w => w._id === savedId);
+        setSelectedWedding(found || data[0]);
+        if (!found) {
+          localStorage.setItem('selectedWeddingId', data[0]._id);
+        }
+      }
     } catch { toast.error('Failed to load weddings'); }
   };
 
@@ -118,15 +138,19 @@ const Events = () => {
   return (
     <div className="flex flex-col md:flex-row bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-300">
       <Sidebar />
-      <div className="flex-1 md:ml-64 p-4 md:p-8 pb-24 md:pb-8">
-        <header className="flex justify-between items-center mb-8">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 pt-20 md:pt-8 pb-24 md:pb-8">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{t('eventsCountdowns')}</h1>
             <p className="text-gray-500 dark:text-gray-400">{t('manageEvents')}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             {weddings.length > 0 && (
-              <select className="p-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 dark:text-white outline-none" value={selectedWedding?._id || ''} onChange={(e) => setSelectedWedding(weddings.find(w => w._id === e.target.value))}>
+              <select className="p-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 dark:text-white outline-none w-full md:w-auto flex-grow md:flex-grow-0 cursor-pointer" value={selectedWedding?._id || ''} onChange={(e) => {
+                const chosen = weddings.find(w => w._id === e.target.value);
+                setSelectedWedding(chosen);
+                if (chosen) localStorage.setItem('selectedWeddingId', chosen._id);
+              }}>
                 {weddings.map(w => <option key={w._id} value={w._id}>{w.weddingName}</option>)}
               </select>
             )}
@@ -138,7 +162,7 @@ const Events = () => {
                 resetForm();
                 setShowForm(true);
               }
-            }} className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition font-medium flex items-center gap-2 cursor-pointer">
+            }} className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition font-medium flex items-center justify-center gap-2 cursor-pointer w-full md:w-auto flex-grow md:flex-grow-0">
               <Plus size={18} /> {t('events')}
             </button>
           </div>
@@ -161,39 +185,36 @@ const Events = () => {
         </div>
 
         {/* Add/Edit Form */}
-        {showForm && (
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border dark:border-gray-800 mb-8">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">{editingEvent ? 'Edit Event' : 'Add New Event'}</h2>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Event Type *</label>
-                <select required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full p-2 border dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:text-white">
-                  {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Date</label>
-                <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full p-2 border dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:text-white" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Budget (₹)</label>
-                <input type="number" value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} className="w-full p-2 border dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:text-white" placeholder="0" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Venue</label>
-                <input value={form.venue} onChange={e => setForm({...form, venue: e.target.value})} className="w-full p-2 border dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:text-white" placeholder="Venue name or address" />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Notes</label>
-                <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2} className="w-full p-2 border dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:text-white" placeholder="Additional details..." />
-              </div>
-              <div className="md:col-span-2 flex justify-end gap-2">
-                <button type="button" onClick={resetForm} className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition">Cancel</button>
-                <button type="submit" className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-purple-800 transition font-medium">{editingEvent ? 'Update' : 'Add Event'}</button>
-              </div>
-            </form>
-          </div>
-        )}
+        <Modal isOpen={showForm} onClose={resetForm} title={editingEvent ? 'Edit Event' : 'Add New Event'}>
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Event Type *</label>
+              <select required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full p-2 border dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:text-white">
+                {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Date</label>
+              <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full p-2 border dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:text-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Budget (₹)</label>
+              <input type="number" value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} className="w-full p-2 border dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:text-white" placeholder="0" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Venue</label>
+              <input value={form.venue} onChange={e => setForm({...form, venue: e.target.value})} className="w-full p-2 border dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:text-white" placeholder="Venue name or address" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Notes</label>
+              <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2} className="w-full p-2 border dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 dark:text-white" placeholder="Additional details..." />
+            </div>
+            <div className="md:col-span-2 flex justify-end gap-2 mt-4">
+              <button type="button" onClick={resetForm} className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition">Cancel</button>
+              <button type="submit" className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-purple-800 transition font-medium">{editingEvent ? 'Update' : 'Add Event'}</button>
+            </div>
+          </form>
+        </Modal>
 
         {/* Events Timeline */}
         {events.length === 0 ? (

@@ -10,10 +10,12 @@ import { demoWedding, demoExpenses, demoVendors } from '../utils/demoData';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 const Analytics = () => {
   const { t } = useTranslation();
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [weddings, setWeddings] = useState([]);
   const [selectedWedding, setSelectedWedding] = useState(null);
   const [expenses, setExpenses] = useState([]);
@@ -37,7 +39,12 @@ const Analytics = () => {
       const { data } = await api.get('/wedding/all');
       setWeddings(data);
       if (data.length > 0) {
-        setSelectedWedding(data[0]);
+        const savedId = localStorage.getItem('selectedWeddingId');
+        const found = data.find(w => w._id === savedId);
+        setSelectedWedding(found || data[0]);
+        if (!found) {
+          localStorage.setItem('selectedWeddingId', data[0]._id);
+        }
       } else {
         setLoading(false);
       }
@@ -49,6 +56,12 @@ const Analytics = () => {
 
   useEffect(() => {
     if (selectedWedding && user) {
+      const isOwner = selectedWedding.userId === user._id || selectedWedding.userId?._id === user._id;
+      const currentRole = selectedWedding.members?.find(m => m.user._id === user._id || m.user === user._id)?.role;
+      if (!isOwner && currentRole === 'Contributor') {
+         navigate('/expenses');
+         return;
+      }
       fetchData();
     }
   }, [selectedWedding, user]);
@@ -114,17 +127,21 @@ const Analytics = () => {
   return (
     <div className="flex flex-col md:flex-row bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-300">
       <Sidebar />
-      <div className="flex-1 md:ml-64 p-4 md:p-8 pb-24 md:pb-8">
-        <header className="flex justify-between items-center mb-8">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 pt-20 md:pt-8 pb-24 md:pb-8">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{t('advancedAnalytics')}</h1>
             <p className="text-gray-500 dark:text-gray-400">{t('analyticsSub')}</p>
           </div>
           {weddings.length > 0 && (
             <select 
-              className="p-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 dark:text-white shadow-sm outline-none cursor-pointer"
+              className="p-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 dark:text-white shadow-sm outline-none cursor-pointer w-full md:w-auto"
               value={selectedWedding?._id || ''}
-              onChange={(e) => setSelectedWedding(weddings.find(w => w._id === e.target.value))}
+              onChange={(e) => {
+                const chosen = weddings.find(w => w._id === e.target.value);
+                setSelectedWedding(chosen);
+                if (chosen) localStorage.setItem('selectedWeddingId', chosen._id);
+              }}
             >
               {weddings.map(w => (
                 <option key={w._id} value={w._id}>{w.weddingName}</option>
@@ -288,7 +305,7 @@ const Analytics = () => {
                       options={{
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } }
+                        plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af' } } }
                       }} 
                     />
                   </div>

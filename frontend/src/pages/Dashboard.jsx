@@ -15,7 +15,7 @@ import { toast } from 'react-toastify';
 import { Plus, Users } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { demoWedding, demoExpenses, demoVendors } from '../utils/demoData';
 
 // Register ChartJS components
@@ -24,6 +24,7 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 const Dashboard = () => {
   const { t } = useTranslation();
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [weddings, setWeddings] = useState([]);
   const [selectedWedding, setSelectedWedding] = useState(null);
   const [expenses, setExpenses] = useState([]);
@@ -55,8 +56,13 @@ const Dashboard = () => {
     try {
       const { data } = await api.get('/wedding/all');
       setWeddings(data);
-      if (data.length > 0 && !selectedWedding) {
-        setSelectedWedding(data[0]);
+      if (data.length > 0) {
+        const savedId = localStorage.getItem('selectedWeddingId');
+        const found = data.find(w => w._id === savedId);
+        setSelectedWedding(found || data[0]);
+        if (!found) {
+          localStorage.setItem('selectedWeddingId', data[0]._id);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -66,6 +72,14 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (selectedWedding && user) {
+      const isOwner = selectedWedding.userId === user._id || selectedWedding.userId?._id === user._id;
+      const currentRole = selectedWedding.members?.find(m => m.user._id === user._id || m.user === user._id)?.role;
+      
+      if (!isOwner && currentRole === 'Contributor') {
+         navigate('/expenses');
+         return;
+      }
+
       const fetchWeddingDetails = async () => {
         try {
           const [expensesRes, vendorsRes] = await Promise.all([
@@ -104,6 +118,7 @@ const Dashboard = () => {
   const handleWeddingCreated = (newWedding) => {
     setIsWeddingModalOpen(false);
     toast.success('Wedding created successfully!');
+    localStorage.setItem('selectedWeddingId', newWedding._id);
     setWeddings([...weddings, newWedding]);
     setSelectedWedding(newWedding);
   };
@@ -144,11 +159,18 @@ const Dashboard = () => {
   const totalBudget = selectedWedding?.totalBudget || 0;
   const totalSpent = expenses.reduce((acc, curr) => acc + curr.amount, 0);
   const remainingBudget = totalBudget - totalSpent;
-  const pendingPayments = vendors.reduce((acc, curr) => acc + curr.remainingAmount, 0);
+  const pendingPayments = vendors.reduce((acc, curr) => acc + curr.remainingAmount, 0) 
+                        + expenses.reduce((acc, exp) => acc + (exp.remainingAmount || 0), 0);
 
   // Prepare Chart Data
   const categoryTotals = expenses.reduce((acc, exp) => {
     acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
+    return acc;
+  }, {});
+
+  const memberTotals = expenses.reduce((acc, exp) => {
+    const memberName = exp.paidBy || 'Self';
+    acc[memberName] = (acc[memberName] || 0) + exp.amount;
     return acc;
   }, {});
 
@@ -169,60 +191,78 @@ const Dashboard = () => {
   return (
     <div className="flex flex-col md:flex-row bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-300">
       <Sidebar />
-      <div className="flex-1 md:ml-64 p-4 md:p-8 pb-24 md:pb-8">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 pt-20 md:pt-8 pb-24 md:pb-8">
+        {/* Global Action: New Wedding */}
+        <div className="w-full flex justify-end mb-2 md:mb-4">
+          <button 
+            onClick={() => {
+              if (!user) {
+                setAuthActionName('create a wedding workspace');
+                setIsAuthModalOpen(true);
+              } else {
+                setIsWeddingModalOpen(true);
+              }
+            }}
+            className="bg-primary text-white px-5 py-2.5 rounded-lg hover:bg-purple-800 transition shadow-md font-bold flex items-center justify-center gap-2 w-full md:w-auto cursor-pointer border border-purple-500/30">
+            <Plus size={18}/> New Wedding
+          </button>
+        </div>
+
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-gray-800 dark:text-white">Welcome, {user?.name || 'Guest'}</h1>
-            <p className="text-gray-500 dark:text-gray-400">Manage your wedding expenses efficiently.</p>
+            <h1 className="text-3xl font-extrabold tracking-tight text-gray-800 dark:text-white">{t('welcome')}, {user?.name || t('guest')}</h1>
+            <p className="text-gray-500 dark:text-gray-400">{t('manageExpenses')}</p>
           </div>
-          <div className="flex gap-4 items-center self-stretch md:self-auto justify-end">
-            <NotificationBell selectedWedding={selectedWedding} />
-            {weddings.length > 0 && (
-              <div className="flex gap-2 items-center">
+          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center w-full md:w-auto">
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <NotificationBell selectedWedding={selectedWedding} />
+              {weddings.length > 0 && (
                 <select 
-                  className="p-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 dark:text-white shadow-sm outline-none cursor-pointer"
+                  className="p-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 dark:text-white shadow-sm outline-none cursor-pointer flex-grow md:flex-grow-0 w-full md:w-auto font-medium"
                   value={selectedWedding?._id || ''}
-                  onChange={(e) => setSelectedWedding(weddings.find(w => w._id === e.target.value))}
+                  onChange={(e) => {
+                    const chosen = weddings.find(w => w._id === e.target.value);
+                    setSelectedWedding(chosen);
+                    if (chosen) localStorage.setItem('selectedWeddingId', chosen._id);
+                  }}
                 >
                   {weddings.map(w => (
                     <option key={w._id} value={w._id}>{w.weddingName}</option>
                   ))}
                 </select>
+              )}
+            </div>
+
+            {selectedWedding && (
+              <div className={`grid ${(!user || selectedWedding.userId === user?._id || selectedWedding.userId?._id === user?._id) ? 'grid-cols-2' : 'grid-cols-1'} gap-2 w-full md:flex md:w-auto`}>
+                {(!user || selectedWedding.userId === user?._id || selectedWedding.userId?._id === user?._id) && (
+                  <button 
+                    onClick={() => {
+                      if (!user) {
+                        setAuthActionName('invite family members');
+                        setIsAuthModalOpen(true);
+                      } else {
+                        setIsInviteModalOpen(true);
+                      }
+                    }}
+                    className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition shadow-sm font-medium flex items-center justify-center gap-1 w-full cursor-pointer border border-transparent dark:border-gray-700">
+                    <Users size={18}/> Invite
+                  </button>
+                )}
                 <button 
-                  onClick={handleDeleteWedding}
-                  className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                  title="Delete Selected Wedding"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                  onClick={() => {
+                    if (!user) {
+                      setAuthActionName('add an expense');
+                      setIsAuthModalOpen(true);
+                    } else {
+                      setIsExpenseModalOpen(true);
+                    }
+                  }}
+                  className="bg-primary/10 hover:bg-primary/20 dark:bg-primary/20 dark:hover:bg-primary/30 text-primary dark:text-purple-300 border border-primary/20 dark:border-primary/30 px-4 py-2 rounded-lg transition shadow-sm font-bold flex items-center justify-center gap-1 w-full cursor-pointer">
+                  <Plus size={18}/> Add Expense
                 </button>
               </div>
             )}
-            {selectedWedding && (
-              <button 
-                onClick={() => {
-                  if (!user) {
-                    setAuthActionName('invite family members');
-                    setIsAuthModalOpen(true);
-                  } else {
-                    setIsInviteModalOpen(true);
-                  }
-                }}
-                className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition shadow-sm font-medium flex items-center gap-1">
-                <Users size={18}/> Invite
-              </button>
-            )}
-            <button 
-              onClick={() => {
-                if (!user) {
-                  setAuthActionName('create a wedding workspace');
-                  setIsAuthModalOpen(true);
-                } else {
-                  setIsWeddingModalOpen(true);
-                }
-              }}
-              className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition shadow-sm font-medium flex items-center gap-1">
-              <Plus size={18}/> New Wedding
-            </button>
           </div>
         </header>
 
@@ -234,18 +274,18 @@ const Dashboard = () => {
                 ✨
               </div>
               <div>
-                <h3 className="font-extrabold text-gray-800 dark:text-white text-lg">Exploring in Demo Mode</h3>
+                <h3 className="font-extrabold text-gray-800 dark:text-white text-lg">{t('exploringDemoMode')}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 max-w-xl">
-                  You are currently browsing the live workspace of <b>Pooja & Rahul's Wedding</b>. Create your own wedding account to start logging expenses, tracking vendors, and inviting family!
+                  {t('demoModeBanner')}
                 </p>
               </div>
             </div>
             <div className="flex gap-3 w-full md:w-auto">
               <Link to="/login" className="flex-1 md:flex-none text-center bg-gradient-to-r from-primary to-purple-800 hover:from-purple-800 hover:to-indigo-900 text-white text-sm font-bold px-5 py-3 rounded-xl transition duration-300 shadow-md shadow-purple-600/10">
-                Log In
+                {t('logIn')}
               </Link>
               <Link to="/register" className="flex-1 md:flex-none text-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm font-bold px-5 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-750 transition duration-300">
-                Sign Up
+                {t('signUp')}
               </Link>
             </div>
           </div>
@@ -253,12 +293,12 @@ const Dashboard = () => {
 
         {weddings.length === 0 ? (
           <div className="bg-white dark:bg-gray-900 p-12 rounded-xl shadow-sm text-center border border-dashed border-gray-300 dark:border-gray-700">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-gray-200">No weddings found</h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">Get started by creating your first wedding dashboard to track expenses, manage vendors, and monitor your budget.</p>
+            <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-gray-200">{t('noWeddingsFound')}</h2>
+            <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">{t('noWeddingsSub')}</p>
             <button 
               onClick={() => setIsWeddingModalOpen(true)}
               className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-purple-800 transition font-medium shadow-md">
-              Create First Wedding
+              {t('createFirstWedding')}
             </button>
           </div>
         ) : (
@@ -293,21 +333,25 @@ const Dashboard = () => {
                     } else {
                       setIsExpenseModalOpen(true);
                     }
-                  }} className="text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-md flex items-center gap-1 transition cursor-pointer">
+                  }} className="text-sm bg-primary/10 hover:bg-primary/20 dark:bg-primary/20 dark:hover:bg-primary/30 text-primary dark:text-purple-300 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer font-bold border border-primary/20 dark:border-primary/30">
                     <Plus size={16}/> {t('addExpense')}
                   </button>
                 </div>
-                {expenses.length === 0 ? <p className="text-gray-500 dark:text-gray-400 text-center py-8">No expenses added yet.</p> : (
+                {expenses.length === 0 ? <p className="text-gray-500 dark:text-gray-400 text-center py-8">{t('noExpenses')}</p> : (
                   <div className="space-y-4">
                     {expenses.slice(0, 5).map(exp => (
                       <div key={exp._id} className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-primary font-bold">
+                          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-primary font-bold uppercase">
                             {exp.category.charAt(0)}
                           </div>
                           <div>
                             <p className="font-semibold text-gray-800 dark:text-gray-200">{t(exp.category.toLowerCase()) || exp.category} {exp.vendor && <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({exp.vendor})</span>}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(exp.expenseDate).toLocaleDateString()} • {t(exp.paymentMethod.toLowerCase()) || exp.paymentMethod} • Added by {exp.addedBy?.name || 'Unknown'}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {new Date(exp.expenseDate).toLocaleDateString()}
+                              {exp.paymentStatus !== 'Pending' && ` • ${t(exp.paymentMethod?.toLowerCase()) || exp.paymentMethod}`}
+                              {` • Paid By: ${exp.paidBy || 'Self'}`}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -325,7 +369,7 @@ const Dashboard = () => {
               <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm flex flex-col items-center">
                 <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-white w-full">{t('expenseBreakdown')}</h3>
                 {expenses.length === 0 ? (
-                  <p className="text-gray-500 dark:text-gray-400 flex-1 flex items-center justify-center">No data to display.</p>
+                  <p className="text-gray-500 dark:text-gray-400 flex-1 flex items-center justify-center">{t('noDataDisplay')}</p>
                 ) : (
                   <div className="w-full max-w-[250px] aspect-square">
                     <Doughnut data={chartData} options={{ maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, color: '#9ca3af' } } } }} />
@@ -333,6 +377,21 @@ const Dashboard = () => {
                 )}
                 
                 <div className="w-full mt-6 pt-6 border-t dark:border-gray-700">
+                  <h3 className="text-sm font-bold text-gray-800 dark:text-gray-300 mb-3">Member Contributions</h3>
+                  <div className="space-y-3 mb-6">
+                    {Object.entries(memberTotals).map(([name, total]) => (
+                      <div key={name} className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs uppercase">
+                            {name.charAt(0)}
+                          </div>
+                          {name}
+                        </span>
+                        <span className="font-bold text-gray-800 dark:text-gray-200">₹{total.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+
                   <h3 className="text-sm font-bold text-gray-800 dark:text-gray-300 mb-3">{t('teamMembers')} ({1 + (selectedWedding.members?.length || 0)})</h3>
                   <div className="flex flex-wrap gap-2">
                     <span className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 px-2 py-1 rounded-full border border-purple-200 dark:border-purple-800/50">
@@ -358,21 +417,21 @@ const Dashboard = () => {
                   } else {
                     setIsVendorModalOpen(true);
                   }
-                }} className="text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-md flex items-center gap-1 transition cursor-pointer">
+                }} className="text-sm bg-primary/10 hover:bg-primary/20 dark:bg-primary/20 dark:hover:bg-primary/30 text-primary dark:text-purple-300 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer font-bold border border-primary/20 dark:border-primary/30">
                   <Plus size={16}/> {t('addVendor')}
                 </button>
               </div>
-              {vendors.length === 0 ? <p className="text-gray-500 dark:text-gray-400 text-center py-8">No vendors added yet.</p> : (
+              {vendors.length === 0 ? <p className="text-gray-500 dark:text-gray-400 text-center py-8">{t('noVendors')}</p> : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 text-sm">
-                        <th className="p-3 font-medium">Vendor Name</th>
-                        <th className="p-3 font-medium">Service</th>
-                        <th className="p-3 font-medium">Contact</th>
-                        <th className="p-3 font-medium text-right">Total Amount</th>
-                        <th className="p-3 font-medium text-right">Advance Paid</th>
-                        <th className="p-3 font-medium text-right">Pending</th>
+                        <th className="p-3 font-medium">{t('vendorName')}</th>
+                        <th className="p-3 font-medium">{t('serviceType')}</th>
+                        <th className="p-3 font-medium">{t('contactNumber')}</th>
+                        <th className="p-3 font-medium text-right">{t('totalAmount')}</th>
+                        <th className="p-3 font-medium text-right">{t('advancePaid')}</th>
+                        <th className="p-3 font-medium text-right">{t('pendingBalance')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -380,7 +439,11 @@ const Dashboard = () => {
                         <tr key={v._id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
                           <td className="p-3 font-medium dark:text-gray-200">{v.vendorName}</td>
                           <td className="p-3 text-sm text-gray-500 dark:text-gray-400">{v.serviceType}</td>
-                          <td className="p-3 text-sm dark:text-gray-300">{v.contactNumber}</td>
+                          <td className="p-3 text-sm dark:text-gray-300">
+                            {v.contactNumber ? (
+                              <a href={`tel:${v.contactNumber}`} className="text-primary hover:underline font-mono">{v.contactNumber}</a>
+                            ) : '-'}
+                          </td>
                           <td className="p-3 text-right dark:text-white">₹{v.totalAmount.toLocaleString()}</td>
                           <td className="p-3 text-right text-green-600 dark:text-green-400">₹{v.advancePaid.toLocaleString()}</td>
                           <td className="p-3 text-right font-bold text-red-500 dark:text-red-400">₹{v.remainingAmount.toLocaleString()}</td>
