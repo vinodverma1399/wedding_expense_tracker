@@ -87,9 +87,15 @@ const Sidebar = () => {
         <button onClick={toggleDarkMode} className="flex items-center justify-center gap-2 w-full p-2 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
           {isDark ? <><Sun size={20} /> Light Mode</> : <><Moon size={20} /> Dark Mode</>}
         </button>
-        <button onClick={handleLogout} className="flex items-center justify-center gap-2 w-full p-2 text-red-500 font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition border border-transparent hover:border-red-100 dark:hover:border-red-900">
-          <LogOut size={20} /> Logout
-        </button>
+        {user ? (
+          <button onClick={handleLogout} className="flex items-center justify-center gap-2 w-full p-2 text-red-500 font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition border border-transparent hover:border-red-100 dark:hover:border-red-900 cursor-pointer">
+            <LogOut size={20} /> Logout
+          </button>
+        ) : (
+          <button onClick={() => navigate('/login')} className="flex items-center justify-center gap-2 w-full p-2 text-primary font-bold rounded-lg bg-purple-50 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition border border-primary/20 cursor-pointer">
+            <LogOut size={20} className="rotate-180" /> Login / Sign Up
+          </button>
+        )}
       </div>
     </div>
   );
