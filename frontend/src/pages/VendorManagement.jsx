@@ -8,6 +8,8 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { useTranslation } from 'react-i18next';
+import AuthRequiredModal from '../components/AuthRequiredModal';
+import { demoWedding, demoVendors } from '../utils/demoData';
 
 const VendorManagement = () => {
   const { t } = useTranslation();
@@ -16,9 +18,20 @@ const VendorManagement = () => {
   const [selectedWedding, setSelectedWedding] = useState(null);
   const [vendors, setVendors] = useState([]);
 
+  // Auth Modal states for Guest/Demo Mode
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authActionName, setAuthActionName] = useState('');
+
   useEffect(() => {
-    fetchWeddings();
-  }, []);
+    if (!user) {
+      // Instantly load mock wedding data if no user is signed in
+      setWeddings([demoWedding]);
+      setSelectedWedding(demoWedding);
+      setVendors(demoVendors);
+    } else {
+      fetchWeddings();
+    }
+  }, [user]);
 
   const fetchWeddings = async () => {
     try {
@@ -33,10 +46,10 @@ const VendorManagement = () => {
   };
 
   useEffect(() => {
-    if (selectedWedding) {
+    if (selectedWedding && user) {
       fetchVendors();
     }
-  }, [selectedWedding]);
+  }, [selectedWedding, user]);
 
   const fetchVendors = async () => {
     try {
@@ -48,6 +61,11 @@ const VendorManagement = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!user) {
+      setAuthActionName('delete vendors');
+      setIsAuthModalOpen(true);
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this vendor?')) {
       try {
         await api.delete(`/vendor/delete/${id}`);
@@ -184,6 +202,11 @@ const VendorManagement = () => {
           </div>
         )}
       </div>
+      <AuthRequiredModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        actionName={authActionName} 
+      />
     </div>
   );
 };
