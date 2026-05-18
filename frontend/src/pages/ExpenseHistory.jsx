@@ -9,6 +9,8 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import EditExpenseModal from '../components/EditExpenseModal';
 import { useTranslation } from 'react-i18next';
+import AuthRequiredModal from '../components/AuthRequiredModal';
+import { demoWedding, demoExpenses } from '../utils/demoData';
 
 const ExpenseHistory = () => {
   const { t } = useTranslation();
@@ -26,9 +28,20 @@ const ExpenseHistory = () => {
 
   const categories = ['All', 'Venue', 'Catering', 'Decoration', 'Photography', 'Jewellery', 'Travel', 'DJ', 'Makeup', 'Clothes', 'Gifts', 'Hotel', 'Other'];
 
+  // Auth Modal states for Guest/Demo Mode
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authActionName, setAuthActionName] = useState('');
+
   useEffect(() => {
-    fetchWeddings();
-  }, []);
+    if (!user) {
+      // Instantly load mock wedding data if no user is signed in
+      setWeddings([demoWedding]);
+      setSelectedWedding(demoWedding);
+      setExpenses(demoExpenses);
+    } else {
+      fetchWeddings();
+    }
+  }, [user]);
 
   const fetchWeddings = async () => {
     try {
@@ -43,10 +56,10 @@ const ExpenseHistory = () => {
   };
 
   useEffect(() => {
-    if (selectedWedding) {
+    if (selectedWedding && user) {
       fetchExpenses();
     }
-  }, [selectedWedding]);
+  }, [selectedWedding, user]);
 
   const fetchExpenses = async () => {
     try {
@@ -58,6 +71,11 @@ const ExpenseHistory = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!user) {
+      setAuthActionName('delete expenses');
+      setIsAuthModalOpen(true);
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this expense?')) {
       try {
         await api.delete(`/expense/delete/${id}`);
@@ -240,8 +258,15 @@ const ExpenseHistory = () => {
                         <td className="p-3 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <button 
-                              onClick={() => setEditingExpense(exp)}
-                              className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                              onClick={() => {
+                                if (!user) {
+                                  setAuthActionName('edit expenses');
+                                  setIsAuthModalOpen(true);
+                                } else {
+                                  setEditingExpense(exp);
+                                }
+                              }}
+                              className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition cursor-pointer"
                               title="Edit Expense"
                             >
                               <Edit2 size={18} />
@@ -310,6 +335,12 @@ const ExpenseHistory = () => {
           onUpdate={handleUpdateExpense} 
         />
       )}
+
+      <AuthRequiredModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        actionName={authActionName} 
+      />
     </div>
   );
 };
