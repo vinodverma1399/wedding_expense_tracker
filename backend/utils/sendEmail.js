@@ -18,6 +18,9 @@ const sendEmail = async ({ to, subject, html }) => {
         user: process.env.EMAIL_USER || 'leola.steuber@ethereal.email', // Fallback ethereal credentials
         pass: process.env.EMAIL_PASS || 'T8Tch7F3cGBNpxVq7U',
       },
+      lookup: (hostname, options, callback) => {
+        dns.lookup(hostname, { ...options, family: 4 }, callback);
+      },
       tls: {
         rejectUnauthorized: false
       },
