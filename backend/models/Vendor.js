@@ -7,7 +7,9 @@ const vendorSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true },
   advancePaid: { type: Number, required: true, default: 0 },
   remainingAmount: { type: Number, required: true },
-  contactNumber: { type: String, required: true }
+  contactNumber: { type: String, required: true },
+  occasionDate: { type: Date },
+  addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Vendor', vendorSchema);

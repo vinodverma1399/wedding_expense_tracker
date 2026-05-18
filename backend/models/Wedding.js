@@ -10,7 +10,7 @@ const weddingSchema = new mongoose.Schema({
   totalBudget: { type: Number, required: true },
   members: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    role: { type: String, enum: ['Admin', 'Editor', 'Viewer'], default: 'Editor' }
+    role: { type: String, enum: ['Admin', 'Editor', 'Viewer', 'Contributor'], default: 'Editor' }
   }]
 }, { timestamps: true });
 
