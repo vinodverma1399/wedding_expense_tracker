@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Heart, Mail, Lock, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +14,7 @@ const Login = () => {
   const { t } = useTranslation();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -140,6 +142,13 @@ const Login = () => {
                   <label className="text-xs font-semibold text-gray-600 dark:text-gray-300" htmlFor="password">
                     {t('password')}
                   </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotModalOpen(true)}
+                    className="text-xs font-semibold text-primary hover:underline transition cursor-pointer"
+                  >
+                    Forgot Password?
+                  </button>
                 </div>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
@@ -205,6 +214,8 @@ const Login = () => {
             </p>
 
           </div>
+
+          <ForgotPasswordModal isOpen={isForgotModalOpen} onClose={() => setIsForgotModalOpen(false)} />
 
         </div>
       </div>

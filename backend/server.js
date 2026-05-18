@@ -1,6 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 dotenv.config();
+// Trigger server refresh to reload newly updated .env variables
 
 const cors = require('cors');
 const helmet = require('helmet');
