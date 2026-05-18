@@ -34,16 +34,21 @@ const NotificationBell = ({ selectedWedding }) => {
 
       // Pending vendor payments
       const pending = vendors.filter(v => v.remainingAmount > 0);
-      if (pending.length > 0) {
-        const total = pending.reduce((a, v) => a + v.remainingAmount, 0);
-        newAlerts.push({ type: 'info', msg: `${pending.length} vendor(s) have pending balance of ₹${total.toLocaleString()}` });
-      }
+      pending.forEach(v => {
+        newAlerts.push({ 
+          type: 'info', 
+          msg: `Pending Vendor Payment: ₹${v.remainingAmount.toLocaleString()} is due to ${v.vendorName} (${v.serviceType}).` 
+        });
+      });
 
       // Pending expenses
-      const pendingExp = expenses.filter(e => e.paymentStatus === 'Pending').length;
-      if (pendingExp > 0) {
-        newAlerts.push({ type: 'warning', msg: `${pendingExp} expense(s) are marked as Pending payment.` });
-      }
+      const pendingExp = expenses.filter(e => e.paymentStatus === 'Pending');
+      pendingExp.forEach(e => {
+        newAlerts.push({ 
+          type: 'warning', 
+          msg: `Pending Expense: ₹${e.amount.toLocaleString()} for ${e.category} is unpaid.` 
+        });
+      });
 
     } catch (e) { /* silent */ }
     setAlerts(newAlerts);
@@ -70,22 +75,26 @@ const NotificationBell = ({ selectedWedding }) => {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 w-80 bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
-          <div className="p-4 border-b dark:border-gray-700">
-            <h3 className="font-bold text-gray-800 dark:text-white">Notifications</h3>
+        <>
+          {/* Invisible backdrop to allow closing when tapping outside on mobile */}
+          <div className="fixed inset-0 z-40 md:hidden" onClick={() => setOpen(false)}></div>
+          <div className="absolute left-0 md:left-auto md:right-0 top-12 w-[calc(100vw-2rem)] md:w-80 bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden max-w-sm">
+            <div className="p-4 border-b dark:border-gray-700">
+              <h3 className="font-bold text-gray-800 dark:text-white">Notifications</h3>
+            </div>
+            <div className="max-h-72 overflow-y-auto p-2 space-y-2">
+              {alerts.length === 0 ? (
+                <p className="text-center text-gray-500 dark:text-gray-400 py-6 text-sm">All good! No alerts.</p>
+              ) : (
+                alerts.map((alert, i) => (
+                  <div key={i} className={`p-3 rounded-lg border text-sm font-medium ${colorMap[alert.type]}`}>
+                    {alert.msg}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-          <div className="max-h-72 overflow-y-auto p-2 space-y-2">
-            {alerts.length === 0 ? (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-6 text-sm">All good! No alerts.</p>
-            ) : (
-              alerts.map((alert, i) => (
-                <div key={i} className={`p-3 rounded-lg border text-sm font-medium ${colorMap[alert.type]}`}>
-                  {alert.msg}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

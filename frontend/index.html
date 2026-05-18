@@ -14,9 +14,65 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>Wedding Expense Tracker</title>
+
+    <!-- Auto-Translate Engine (Google hidden) -->
+    <style>
+      /* Completely hide ALL Google Translate UI */
+      .goog-te-banner-frame,
+      .goog-te-banner-frame.skiptranslate,
+      .skiptranslate,
+      #goog-gt-tt,
+      .goog-tooltip,
+      .goog-tooltip:hover,
+      .goog-te-gadget,
+      .goog-te-gadget *,
+      .VIpgJd-ZVi9od-aZ2wEe-wOHMyf { display: none !important; }
+      body { top: 0 !important; position: static !important; }
+      iframe.skiptranslate { display: none !important; height: 0 !important; }
+    </style>
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement(
+          { pageLanguage: 'en', includedLanguages: 'hi,bn,te,mr,ta,ur,gu,kn,ml,pa,or,as,ne,sd,sa,kok,mai,mni,sat,ks,doi,brx', autoDisplay: false },
+          'google_translate_element'
+        );
+      }
+
+      window.triggerGoogleTranslate = function(langCode) {
+        var hostname = window.location.hostname;
+        var expiry = 'expires=Thu, 01 Jan 1970 00:00:00 UTC';
+
+        if (langCode === 'en') {
+          // Nuclear option: delete cookie across every path & domain variant
+          var domains = ['', hostname, '.' + hostname, 'localhost', '.localhost'];
+          var paths = ['/', '/en/', '/en'];
+          domains.forEach(function(d) {
+            paths.forEach(function(p) {
+              var c = 'googtrans=; ' + expiry + '; path=' + p;
+              if (d) c += '; domain=' + d;
+              document.cookie = c;
+            });
+          });
+          // Use replace() + timestamp so browser loads a completely fresh page
+          // The _gt param is ignored by React Router but busts the browser cache
+          window.location.replace(window.location.pathname + '?_gt=' + Date.now());
+        } else {
+          document.cookie = 'googtrans=/en/' + langCode + '; path=/';
+          document.cookie = 'googtrans=/en/' + langCode + '; path=/; domain=' + hostname;
+          document.cookie = 'googtrans=/en/' + langCode + '; path=/; domain=.' + hostname;
+          window.location.reload();
+        }
+      };
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   </head>
   <body>
+    <!-- Apply dark theme immediately before React loads to prevent flash -->
+    <script>if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');</script>
+    <!-- Hidden Google Translate mount point -->
+    <div id="google_translate_element" style="display:none;"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
+
