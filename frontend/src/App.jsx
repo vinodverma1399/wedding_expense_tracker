@@ -15,9 +15,15 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ProtectedRoute = ({ children }) => {
+  const { loading } = React.useContext(AuthContext);
+  if (loading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center dark:text-white">Loading workspace...</div>;
+  return children;
+};
+
+const AdminRoute = ({ children }) => {
   const { user, loading } = React.useContext(AuthContext);
-  if (loading) return <div>Loading...</div>;
-  return user ? children : <Navigate to="/login" />;
+  if (loading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center dark:text-white">Loading...</div>;
+  return user?.isAdmin ? children : <Navigate to="/login" />;
 };
 
 function App() {
@@ -43,7 +49,7 @@ function App() {
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/guests" element={<ProtectedRoute><GuestManagement /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+            <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
           </Routes>
         </main>
         <ToastContainer position="top-right" autoClose={3000} />
