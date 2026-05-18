@@ -45,6 +45,7 @@ const InviteMemberModal = ({ weddingId, onClose }) => {
           <option value="Admin">Admin (Can edit everything)</option>
           <option value="Editor">Editor (Can add/edit expenses)</option>
           <option value="Viewer">Viewer (Read-only)</option>
+          <option value="Contributor">Contributor (Can only add/view their own expenses)</option>
         </select>
       </div>
 

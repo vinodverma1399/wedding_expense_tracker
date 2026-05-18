@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import api from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 const CreateWeddingForm = ({ onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     weddingName: '',
     brideName: '',
@@ -36,47 +38,47 @@ const CreateWeddingForm = ({ onSuccess }) => {
       {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Wedding Name</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('weddingName')}</label>
         <input type="text" name="weddingName" required value={formData.weddingName} onChange={handleChange} 
-          className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. Rahul & Anjali's Wedding" />
+          className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" placeholder="e.g. Rahul & Anjali's Wedding" />
       </div>
       
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Bride Name</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('brideName')}</label>
           <input type="text" name="brideName" required value={formData.brideName} onChange={handleChange} 
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+            className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Groom Name</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('groomName')}</label>
           <input type="text" name="groomName" required value={formData.groomName} onChange={handleChange} 
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+            className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('date')}</label>
           <input type="date" name="weddingDate" required value={formData.weddingDate} onChange={handleChange} 
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+            className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('city')}</label>
           <input type="text" name="city" required value={formData.city} onChange={handleChange} 
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+            className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Total Estimated Budget (₹)</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('totalEstimatedBudget')} (₹)</label>
         <input type="number" name="totalBudget" required value={formData.totalBudget} onChange={handleChange} 
-          className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. 1500000" />
+          className="w-full p-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white" placeholder="e.g. 1500000" />
       </div>
 
       <div className="pt-4">
         <button type="submit" disabled={loading} 
           className="w-full bg-primary text-white py-2 rounded-lg hover:bg-purple-800 transition font-medium disabled:opacity-50">
-          {loading ? 'Creating...' : 'Create Wedding'}
+          {loading ? t('creating') : t('createWedding')}
         </button>
       </div>
     </form>
