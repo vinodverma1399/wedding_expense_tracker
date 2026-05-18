@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import { Plus, Trash2, Users, CheckCircle, XCircle, Clock, Edit2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AuthContext } from '../context/AuthContext';
+import AuthRequiredModal from '../components/AuthRequiredModal';
+import { demoWedding, demoGuests } from '../utils/demoData';
 
 const EVENT_TYPES = ['Haldi', 'Mehendi', 'Sangeet', 'Wedding', 'Reception', 'Engagement', 'Other'];
 const EVENT_COLORS = {
@@ -13,6 +16,7 @@ const EVENT_COLORS = {
 
 const GuestManagement = () => {
   const { t } = useTranslation();
+  const { user } = useContext(AuthContext);
   const [weddings, setWeddings] = useState([]);
   const [selectedWedding, setSelectedWedding] = useState(null);
   const [guests, setGuests] = useState([]);
@@ -25,8 +29,22 @@ const GuestManagement = () => {
     rsvpStatus: 'Pending', numberOfPlates: 1, events: [], notes: ''
   });
 
-  useEffect(() => { fetchWeddings(); }, []);
-  useEffect(() => { if (selectedWedding) fetchGuests(); }, [selectedWedding]);
+  // Auth Modal states for Guest/Demo Mode
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authActionName, setAuthActionName] = useState('');
+
+  useEffect(() => {
+    if (!user) {
+      // Instantly load mock wedding & guest data if no user is signed in
+      setWeddings([demoWedding]);
+      setSelectedWedding(demoWedding);
+      setGuests(demoGuests);
+    } else {
+      fetchWeddings();
+    }
+  }, [user]);
+
+  useEffect(() => { if (selectedWedding && user) fetchGuests(); }, [selectedWedding, user]);
 
   const fetchWeddings = async () => {
     try {
@@ -74,6 +92,11 @@ const GuestManagement = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!user) {
+      setAuthActionName('delete guests');
+      setIsAuthModalOpen(true);
+      return;
+    }
     if (!window.confirm('Delete this guest?')) return;
     try {
       await api.delete(`/guests/delete/${id}`);
@@ -117,7 +140,15 @@ const GuestManagement = () => {
                 {weddings.map(w => <option key={w._id} value={w._id}>{w.weddingName}</option>)}
               </select>
             )}
-            <button onClick={() => { resetForm(); setShowForm(true); }} className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition font-medium flex items-center gap-2">
+            <button onClick={() => {
+              if (!user) {
+                setAuthActionName('add guests');
+                setIsAuthModalOpen(true);
+              } else {
+                resetForm();
+                setShowForm(true);
+              }
+            }} className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition font-medium flex items-center gap-2 cursor-pointer">
               <Plus size={18} /> {t('addGuest')}
             </button>
           </div>
@@ -253,8 +284,15 @@ const GuestManagement = () => {
                     <td className="p-3 text-center font-bold dark:text-white">{g.numberOfPlates}</td>
                     <td className="p-3 text-center">
                       <div className="flex justify-center gap-2">
-                        <button onClick={() => handleEdit(g)} className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition"><Edit2 size={16} /></button>
-                        <button onClick={() => handleDelete(g._id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"><Trash2 size={16} /></button>
+                        <button onClick={() => {
+                          if (!user) {
+                            setAuthActionName('edit guest details');
+                            setIsAuthModalOpen(true);
+                          } else {
+                            handleEdit(g);
+                          }
+                        }} className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition cursor-pointer"><Edit2 size={16} /></button>
+                        <button onClick={() => handleDelete(g._id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition cursor-pointer"><Trash2 size={16} /></button>
                       </div>
                     </td>
                   </tr>
@@ -264,6 +302,11 @@ const GuestManagement = () => {
           </div>
         </div>
       </div>
+      <AuthRequiredModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        actionName={authActionName} 
+      />
     </div>
   );
 };
