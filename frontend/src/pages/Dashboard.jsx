@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { io } from 'socket.io-client';
+import { SOCKET_URL } from '../utils/constants';
 import api from '../services/api';
 import Sidebar from '../components/Sidebar';
 import Modal from '../components/Modal';
@@ -96,7 +97,7 @@ const Dashboard = () => {
       fetchWeddingDetails();
 
       // Connect to Socket.IO for real-time collaboration
-      const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
+      const socket = io(SOCKET_URL);
       socket.emit('joinWedding', selectedWedding._id);
 
       socket.on('expenseAdded', (newExpense) => {
