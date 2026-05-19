@@ -1,28 +1,34 @@
 const nodemailer = require('nodemailer');
-const dns = require('dns');
-
-// Prioritize IPv4 over IPv6 to prevent ENETUNREACH errors on networks with limited IPv6 routing
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
+const dns = require('dns').promises;
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
-    // Configurable SMTP transporter with a fallback to Mailtrap / Ethereal or standard SMTP settings
     const isEthereal = !process.env.EMAIL_HOST;
+    const originalHost = process.env.EMAIL_HOST || 'smtp.ethereal.email';
+    
+    // Resolve host to IPv4 specifically to prevent ENETUNREACH errors on Render
+    let resolvedHost = originalHost;
+    if (!isEthereal) {
+      try {
+        const lookup = await dns.lookup(originalHost, { family: 4 });
+        resolvedHost = lookup.address;
+        console.log(`[SMTP DNS] Resolved ${originalHost} to IPv4: ${resolvedHost}`);
+      } catch (dnsErr) {
+        console.error(`[SMTP DNS] Lookup failed for ${originalHost}, falling back to original:`, dnsErr);
+      }
+    }
+
     const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.ethereal.email',
+      host: resolvedHost,
       port: isEthereal ? 587 : (parseInt(process.env.EMAIL_PORT) || 465),
       secure: isEthereal ? false : (process.env.EMAIL_PORT === '465' || true),
       auth: {
         user: process.env.EMAIL_USER || 'leola.steuber@ethereal.email', // Fallback ethereal credentials
         pass: process.env.EMAIL_PASS || 'T8Tch7F3cGBNpxVq7U',
       },
-      lookup: (hostname, options, callback) => {
-        dns.lookup(hostname, { ...options, family: 4 }, callback);
-      },
       tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false,
+        servername: originalHost // Critical for TLS verification to succeed against the original hostname
       },
       connectionTimeout: 6000, // 6 seconds timeout
       greetingTimeout: 6000,
@@ -50,3 +56,4 @@ const sendEmail = async ({ to, subject, html }) => {
 };
 
 module.exports = sendEmail;
+
