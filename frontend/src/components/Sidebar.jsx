@@ -1,7 +1,8 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LogOut, Home, PieChart, Users, Moon, Sun, TrendingUp, UserCheck, CalendarDays, Globe, Shield, ChevronDown, Check, Plus } from 'lucide-react';
+import { LogOut, Home, PieChart, Users, Moon, Sun, TrendingUp, UserCheck, CalendarDays, Globe, Shield, ChevronDown, Check, Plus, User } from 'lucide-react';
+
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import Modal from './Modal';
@@ -207,15 +208,16 @@ const Sidebar = () => {
           <LangPicker compact={true} />
           <DarkModeButton mobile={true} />
           {user ? (
-            <button onClick={handleLogout} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition">
-              <LogOut size={18} />
-            </button>
+            <Link to="/profile" className="p-2 text-primary hover:bg-purple-50 dark:hover:bg-purple-950/20 rounded-lg transition flex items-center justify-center">
+              <User size={18} />
+            </Link>
           ) : (
             <button onClick={() => navigate('/login')} className="p-2 text-primary hover:bg-purple-50 dark:hover:bg-purple-950/20 rounded-lg transition">
               <LogOut size={18} className="rotate-180" />
             </button>
           )}
         </div>
+
       </div>
 
       {/* ── Desktop Sidebar ── */}
@@ -252,10 +254,16 @@ const Sidebar = () => {
           <DarkModeButton />
 
           {user ? (
-            <button onClick={handleLogout}
-              className="flex items-center justify-center gap-2 w-full p-2 text-red-500 font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition border border-transparent hover:border-red-100 dark:hover:border-red-900">
-              <LogOut size={20} /> Logout
-            </button>
+            <Link to="/profile"
+              className="flex items-center gap-3 w-full p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition border border-transparent hover:border-gray-100 dark:hover:border-gray-800/50">
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center flex-shrink-0">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 text-left overflow-hidden">
+                <p className="text-sm font-semibold truncate leading-none mb-1">{user.name}</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate leading-none">{user.email}</p>
+              </div>
+            </Link>
           ) : (
             <button onClick={() => navigate('/login')}
               className="flex items-center justify-center gap-2 w-full p-2 text-primary font-bold rounded-lg bg-purple-50 dark:bg-purple-950/30 hover:bg-purple-100 transition border border-primary/20">

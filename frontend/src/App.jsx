@@ -11,8 +11,10 @@ import Analytics from './pages/Analytics';
 import GuestManagement from './pages/GuestManagement';
 import Events from './pages/Events';
 import AdminPanel from './pages/AdminPanel';
+import Profile from './pages/Profile';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -60,6 +62,7 @@ function App() {
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/guests" element={<ProtectedRoute><GuestManagement /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
           </Routes>
         </main>
