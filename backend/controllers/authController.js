@@ -116,13 +116,20 @@ const forgotPassword = async (req, res) => {
       </div>
     `;
 
-    await sendEmail({
-      to: user.email,
-      subject: 'Wedding Expense Tracker - Password Reset OTP',
-      html
-    });
-
-    res.json({ message: 'OTP sent successfully to your email' });
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Wedding Expense Tracker - Password Reset OTP',
+        html
+      });
+      res.json({ message: 'OTP sent successfully to your email' });
+    } catch (emailError) {
+      console.error('Email sending failed, but OTP was generated:', emailError);
+      res.json({ 
+        message: 'OTP generated. Email delivery failed, but you can check server logs or proceed if you have the OTP.',
+        emailFailed: true
+      });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
