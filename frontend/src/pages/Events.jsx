@@ -50,7 +50,7 @@ const Events = () => {
   useEffect(() => { 
     if (selectedWedding && user) {
       const isOwner = selectedWedding.userId === user._id || selectedWedding.userId?._id === user._id;
-      const currentRole = selectedWedding.members?.find(m => m.user._id === user._id || m.user === user._id)?.role;
+      const currentRole = selectedWedding.members?.find(m => m.user?._id === user._id || m.user === user._id)?.role;
       if (!isOwner && currentRole === 'Contributor') {
          navigate('/expenses');
          return;
