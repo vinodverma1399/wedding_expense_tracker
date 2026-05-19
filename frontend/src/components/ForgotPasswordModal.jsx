@@ -19,8 +19,12 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     setLoading(true);
     setError('');
     try {
-      await api.post('/auth/forgot-password', { email });
-      toast.success('6-digit OTP sent to your email!');
+      const { data } = await api.post('/auth/forgot-password', { email });
+      if (data.emailFailed) {
+        toast.warning('OTP generated, but email delivery failed. Please check server logs.');
+      } else {
+        toast.success('6-digit OTP sent to your email!');
+      }
       setStep(2);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send OTP. Please check your email.');
