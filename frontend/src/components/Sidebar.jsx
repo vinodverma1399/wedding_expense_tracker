@@ -190,10 +190,17 @@ const Sidebar = () => {
       {/* ── Mobile Top Bar ── */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md border-b dark:border-gray-800/80 flex items-center justify-between px-4 z-[9999] shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-gradient-to-tr from-primary to-purple-600 rounded-lg text-white shadow-sm flex-shrink-0">
+          <div className="p-1.5 bg-gradient-to-tr from-purple-600 to-pink-600 rounded-lg text-white shadow-sm flex-shrink-0 flex items-center justify-center">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
-              <path d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="#fff" fillOpacity="0.8"/>
+              <defs>
+                <linearGradient id="logo-grad-mobile" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ffffff" />
+                  <stop offset="100%" stopColor="#fbcfe8" />
+                </linearGradient>
+              </defs>
+              <path d="M12 2L9 5h6l-3-3z" fill="url(#logo-grad-mobile)" />
+              <path d="M9 5l3 4 3-4H9z" fill="url(#logo-grad-mobile)" opacity="0.85" />
+              <circle cx="12" cy="13" r="5" stroke="url(#logo-grad-mobile)" strokeWidth="2.2" fill="none" />
             </svg>
           </div>
           <div className="flex flex-col">
@@ -233,10 +240,17 @@ const Sidebar = () => {
       <div className="w-64 bg-white dark:bg-gray-900 h-screen shadow-md flex-col hidden md:flex sticky top-0 transition-colors duration-300">
         <div className="p-6 border-b dark:border-gray-800">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-tr from-primary to-purple-600 rounded-xl text-white shadow-md shadow-primary/20 flex-shrink-0">
+            <div className="p-2.5 bg-gradient-to-tr from-primary to-purple-600 rounded-xl text-white shadow-md shadow-primary/20 flex-shrink-0 flex items-center justify-center">
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
-                <path d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="#fff" fillOpacity="0.8"/>
+                <defs>
+                  <linearGradient id="logo-grad-desktop" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="100%" stopColor="#fbcfe8" />
+                  </linearGradient>
+                </defs>
+                <path d="M12 2L9 5h6l-3-3z" fill="url(#logo-grad-desktop)" />
+                <path d="M9 5l3 4 3-4H9z" fill="url(#logo-grad-desktop)" opacity="0.85" />
+                <circle cx="12" cy="13" r="5" stroke="url(#logo-grad-desktop)" strokeWidth="2.2" fill="none" />
               </svg>
             </div>
             <div>

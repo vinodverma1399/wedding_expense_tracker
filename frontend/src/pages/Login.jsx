@@ -46,10 +46,17 @@ const Login = () => {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/20 rounded-full blur-[100px] animate-pulse"></div>
         
         <div className="relative z-10 flex items-center gap-3">
-          <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/20">
+          <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 flex items-center justify-center">
             <svg className="w-7 h-7 text-pink-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
-              <path d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="#fff" fillOpacity="0.8"/>
+              <defs>
+                <linearGradient id="logo-grad-login" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#f472b6" />
+                  <stop offset="100%" stopColor="#db2777" />
+                </linearGradient>
+              </defs>
+              <path d="M12 2L9 5h6l-3-3z" fill="url(#logo-grad-login)" />
+              <path d="M9 5l3 4 3-4H9z" fill="url(#logo-grad-login)" opacity="0.85" />
+              <circle cx="12" cy="13" r="5" stroke="url(#logo-grad-login)" strokeWidth="2.2" fill="none" />
             </svg>
           </div>
           <div>
@@ -100,10 +107,17 @@ const Login = () => {
           {/* Header */}
           <div className="text-center lg:text-left">
             <div className="lg:hidden flex justify-center items-center gap-3 mb-6">
-              <div className="p-2 bg-primary/10 rounded-xl">
+              <div className="p-2 bg-primary/10 rounded-xl flex items-center justify-center">
                 <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
-                  <path d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="#fff" fillOpacity="0.8"/>
+                  <defs>
+                    <linearGradient id="logo-grad-login-mobile" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#8B5CF6" />
+                      <stop offset="100%" stopColor="#EC4899" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M12 2L9 5h6l-3-3z" fill="url(#logo-grad-login-mobile)" />
+                  <path d="M9 5l3 4 3-4H9z" fill="url(#logo-grad-login-mobile)" opacity="0.85" />
+                  <circle cx="12" cy="13" r="5" stroke="url(#logo-grad-login-mobile)" strokeWidth="2.2" fill="none" />
                 </svg>
               </div>
               <div className="text-left">
