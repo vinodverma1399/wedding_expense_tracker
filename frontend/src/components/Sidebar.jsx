@@ -211,7 +211,11 @@ const Sidebar = () => {
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md border-b dark:border-gray-800/80 flex items-center justify-between px-4 z-[9999] shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-gradient-to-tr from-purple-600 to-pink-600 rounded-lg text-white shadow-sm flex-shrink-0 flex items-center justify-center">
-            <Heart className="w-4 h-4 fill-white/20 text-white" />
+            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="14" r="5" stroke="currentColor" strokeWidth="2.2" fill="none" />
+              <path d="M12 3L9 6h6l-3-3z" fill="currentColor" />
+              <path d="M9 6l3 4 3-4H9z" fill="currentColor" opacity="0.85" />
+            </svg>
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent leading-none">WET</span>
@@ -251,7 +255,11 @@ const Sidebar = () => {
         <div className="p-6 border-b dark:border-gray-800">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-gradient-to-tr from-primary to-purple-600 rounded-xl text-white shadow-md shadow-primary/20 flex-shrink-0 flex items-center justify-center">
-              <Heart className="w-5 h-5 fill-white/20 text-white" />
+              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="14" r="5" stroke="currentColor" strokeWidth="2.2" fill="none" />
+                <path d="M12 3L9 6h6l-3-3z" fill="currentColor" />
+                <path d="M9 6l3 4 3-4H9z" fill="currentColor" opacity="0.85" />
+              </svg>
             </div>
             <div>
               <h2 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent leading-none mb-1">

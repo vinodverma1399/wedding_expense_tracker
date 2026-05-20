@@ -47,7 +47,11 @@ const Login = () => {
         
         <div className="relative z-10 flex items-center gap-3">
           <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 flex items-center justify-center">
-            <Heart className="w-7 h-7 text-pink-400 fill-pink-400" />
+            <svg className="w-7 h-7 text-pink-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="14" r="5" stroke="currentColor" strokeWidth="2.2" fill="none" />
+              <path d="M12 3L9 6h6l-3-3z" fill="currentColor" />
+              <path d="M9 6l3 4 3-4H9z" fill="currentColor" opacity="0.85" />
+            </svg>
           </div>
           <div>
             <span className="text-2xl font-black tracking-wider block bg-clip-text text-transparent bg-gradient-to-r from-white via-pink-100 to-pink-200 leading-none">
@@ -98,7 +102,11 @@ const Login = () => {
           <div className="text-center lg:text-left">
             <div className="lg:hidden flex justify-center items-center gap-3 mb-6">
               <div className="p-2 bg-primary/10 rounded-xl flex items-center justify-center">
-                <Heart className="w-5 h-5 text-primary fill-primary/20" />
+                <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="14" r="5" stroke="currentColor" strokeWidth="2.2" fill="none" />
+                  <path d="M12 3L9 6h6l-3-3z" fill="currentColor" />
+                  <path d="M9 6l3 4 3-4H9z" fill="currentColor" opacity="0.85" />
+                </svg>
               </div>
               <div className="text-left">
                 <span className="text-lg font-bold tracking-wider block dark:text-white leading-none">WET</span>
