@@ -161,6 +161,26 @@ const Sidebar = () => {
   const location = useLocation();
   const { t } = useTranslation();
   const [isWeddingModalOpen, setIsWeddingModalOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    setDeferredPrompt(null);
+  };
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -289,6 +309,18 @@ const Sidebar = () => {
           <LangPicker compact={false} />
 
           <DarkModeButton />
+
+          {deferredPrompt && (
+            <button
+              onClick={handleInstallApp}
+              className="flex items-center gap-3 w-full p-2.5 px-2.5 text-primary dark:text-purple-400 font-bold rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 transition border border-dashed border-primary/30 dark:border-primary/25 cursor-pointer text-xs uppercase tracking-wider justify-start"
+            >
+              <svg className="w-5 h-5 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 12H16L12 16L8 12H11V8H13V12Z" fill="currentColor"/>
+              </svg>
+              <span>Install WET App</span>
+            </button>
+          )}
 
           {user ? (
             <Link to="/profile"
