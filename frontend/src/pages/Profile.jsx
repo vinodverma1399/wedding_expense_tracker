@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 import { toast } from 'react-toastify';
-import { LogOut, User, Mail, Calendar, MapPin, DollarSign, Check, Heart, AlertCircle, Trash2 } from 'lucide-react';
+import { LogOut, User, Mail, Calendar, MapPin, DollarSign, Check, Heart, AlertCircle, Trash2, Edit2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import Modal from '../components/Modal';
 
 const Profile = () => {
   const { t } = useTranslation();
@@ -19,6 +20,16 @@ const Profile = () => {
   // Edit user profile states
   const [name, setName] = useState(user?.name || '');
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Edit wedding states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingWeddingId, setEditingWeddingId] = useState('');
+  const [editWeddingName, setEditWeddingName] = useState('');
+  const [editBrideName, setEditBrideName] = useState('');
+  const [editGroomName, setEditGroomName] = useState('');
+  const [editWeddingDate, setEditWeddingDate] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editTotalBudget, setEditTotalBudget] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -85,6 +96,52 @@ const Profile = () => {
     } catch (err) {
       console.error(err);
       toast.error('Failed to delete wedding');
+    }
+  };
+
+  const openEditModal = (wedding) => {
+    setEditingWeddingId(wedding._id);
+    setEditWeddingName(wedding.weddingName);
+    setEditBrideName(wedding.brideName);
+    setEditGroomName(wedding.groomName);
+    const dateStr = wedding.weddingDate ? new Date(wedding.weddingDate).toISOString().substring(0, 10) : '';
+    setEditWeddingDate(dateStr);
+    setEditCity(wedding.city);
+    setEditTotalBudget(wedding.totalBudget);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditWeddingSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/wedding/update/${editingWeddingId}`, {
+        weddingName: editWeddingName,
+        brideName: editBrideName,
+        groomName: editGroomName,
+        weddingDate: editWeddingDate,
+        city: editCity,
+        totalBudget: Number(editTotalBudget)
+      });
+      toast.success('Wedding workspace updated successfully!');
+      setIsEditModalOpen(false);
+      fetchWeddings();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to update wedding workspace');
+    }
+  };
+
+  const handleRemoveMember = async (weddingId, memberUserId) => {
+    if (!window.confirm('Are you sure you want to remove this member from the wedding group?')) {
+      return;
+    }
+    try {
+      await api.post(`/wedding/remove-member/${weddingId}`, { memberUserId });
+      toast.success('Member removed from the group successfully!');
+      fetchWeddings();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to remove member');
     }
   };
 
@@ -175,7 +232,7 @@ const Profile = () => {
               ) : (
                 <div className="space-y-4">
                   {weddings.map((wedding) => {
-                    const isOwner = wedding.userId === user._id || wedding.userId?._id === user._id;
+                    const isOwner = wedding.userId?._id === user._id || wedding.userId === user._id;
                     const role = isOwner ? 'Admin/Owner' : (wedding.members?.find(m => m.user?._id === user._id || m.user === user._id)?.role || 'Member');
                     const isActive = activeWeddingId === wedding._id;
                     
@@ -188,10 +245,10 @@ const Profile = () => {
                             : 'bg-gray-50 dark:bg-gray-800/40 border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700'
                         }`}
                       >
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3 pb-3 border-b border-gray-100 dark:border-gray-800">
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-bold text-gray-800 dark:text-white">{wedding.weddingName}</h4>
+                              <h4 className="font-bold text-gray-800 dark:text-white text-base">{wedding.weddingName}</h4>
                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                                 isOwner ? 'bg-purple-100 dark:bg-purple-950 text-primary' : 'bg-blue-100 dark:bg-blue-950 text-blue-600'
                               }`}>
@@ -246,16 +303,79 @@ const Profile = () => {
                               </button>
                             )}
                             {isOwner && (
-                              <button
-                                onClick={() => handleDeleteWedding(wedding._id)}
-                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 dark:hover:border-red-900 rounded-lg transition cursor-pointer"
-                                title="Delete Workspace"
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => openEditModal(wedding)}
+                                  className="p-2 text-primary hover:bg-purple-50 dark:hover:bg-purple-950/20 border border-transparent hover:border-purple-100 dark:hover:border-purple-900 rounded-lg transition cursor-pointer"
+                                  title="Edit Workspace"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteWedding(wedding._id)}
+                                  className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 dark:hover:border-red-900 rounded-lg transition cursor-pointer"
+                                  title="Delete Workspace"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </>
                             )}
                           </div>
                         </div>
+
+                        {/* Group Members List */}
+                        <div className="mt-3">
+                          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Group Members</p>
+                          <div className="space-y-2">
+                            {/* Creator details */}
+                            <div className="flex items-center justify-between text-xs py-1 px-2 bg-gray-100/50 dark:bg-gray-800/40 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <div className="w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-950 text-primary font-bold flex items-center justify-center text-[10px]">
+                                  {wedding.userId?.name?.charAt(0).toUpperCase() || 'O'}
+                                </div>
+                                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                  {wedding.userId?.name || 'Wedding Creator'}
+                                </span>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500">({wedding.userId?.email})</span>
+                              </div>
+                              <span className="text-[9px] bg-purple-100 dark:bg-purple-950/50 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Owner / Creator</span>
+                            </div>
+
+                            {/* Additional Invited Members */}
+                            {wedding.members && wedding.members.map((member) => (
+                              <div key={member.user?._id || member.user} className="flex items-center justify-between text-xs py-1 px-2 hover:bg-gray-100/30 dark:hover:bg-gray-800/20 rounded-lg transition">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 font-bold flex items-center justify-center text-[10px]">
+                                    {member.user?.name?.charAt(0).toUpperCase() || 'M'}
+                                  </div>
+                                  <span className="text-gray-700 dark:text-gray-300 font-medium">
+                                    {member.user?.name || 'Invited User'}
+                                  </span>
+                                  <span className="text-[10px] text-gray-400 dark:text-gray-500">({member.user?.email || 'No email'})</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] bg-blue-100 dark:bg-blue-950/50 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                    {member.role}
+                                  </span>
+                                  {isOwner && (
+                                    <button 
+                                      onClick={() => handleRemoveMember(wedding._id, member.user?._id || member.user)}
+                                      className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 p-1 rounded transition cursor-pointer"
+                                      title="Remove Member"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+
+                            {(!wedding.members || wedding.members.length === 0) && (
+                              <p className="text-[11px] text-gray-400 dark:text-gray-500 italic pl-2">No other members in this group yet.</p>
+                            )}
+                          </div>
+                        </div>
+
                       </div>
                     );
                   })}
@@ -267,6 +387,83 @@ const Profile = () => {
         </div>
 
       </div>
+
+
+      {/* Edit Wedding Modal */}
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Wedding Details">
+        <form onSubmit={handleEditWeddingSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Wedding Name</label>
+            <input
+              type="text"
+              required
+              value={editWeddingName}
+              onChange={(e) => setEditWeddingName(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Bride Name</label>
+              <input
+                type="text"
+                required
+                value={editBrideName}
+                onChange={(e) => setEditBrideName(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Groom Name</label>
+              <input
+                type="text"
+                required
+                value={editGroomName}
+                onChange={(e) => setEditGroomName(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Wedding Date</label>
+              <input
+                type="date"
+                required
+                value={editWeddingDate}
+                onChange={(e) => setEditWeddingDate(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">City</label>
+              <input
+                type="text"
+                required
+                value={editCity}
+                onChange={(e) => setEditCity(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Total Budget (₹)</label>
+            <input
+              type="number"
+              required
+              value={editTotalBudget}
+              onChange={(e) => setEditTotalBudget(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-primary hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-lg transition"
+          >
+            Update Details
+          </button>
+        </form>
+      </Modal>
     </div>
   );
 };

@@ -128,4 +128,48 @@ const deleteWedding = async (req, res) => {
   }
 };
 
-module.exports = { createWedding, getWeddings, getWeddingById, deleteWedding, inviteMember };
+const updateWedding = async (req, res) => {
+  try {
+    const { weddingName, brideName, groomName, weddingDate, city, totalBudget } = req.body;
+    const wedding = await Wedding.findById(req.params.id);
+    
+    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+    
+    if (wedding.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only the creator can edit this wedding' });
+    }
+    
+    wedding.weddingName = weddingName || wedding.weddingName;
+    wedding.brideName = brideName || wedding.brideName;
+    wedding.groomName = groomName || wedding.groomName;
+    wedding.weddingDate = weddingDate || wedding.weddingDate;
+    wedding.city = city || wedding.city;
+    wedding.totalBudget = totalBudget !== undefined ? totalBudget : wedding.totalBudget;
+    
+    await wedding.save();
+    res.json(wedding);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const removeMember = async (req, res) => {
+  try {
+    const { memberUserId } = req.body;
+    const wedding = await Wedding.findById(req.params.id);
+    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+    
+    if (wedding.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only the creator can manage members' });
+    }
+    
+    wedding.members = wedding.members.filter(m => m.user.toString() !== memberUserId);
+    await wedding.save();
+    res.json({ message: 'Member removed successfully', wedding });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createWedding, getWeddings, getWeddingById, deleteWedding, inviteMember, updateWedding, removeMember };
+
