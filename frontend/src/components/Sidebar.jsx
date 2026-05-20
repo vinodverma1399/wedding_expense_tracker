@@ -72,10 +72,10 @@ const LangPicker = ({ compact }) => {
       <button
         onClick={() => setLangOpen(o => !o)}
         disabled={translating}
-        className={`flex items-center gap-1.5 ${
+        className={`flex items-center gap-3 ${
           compact
             ? 'p-2 rounded-lg'
-            : 'w-full p-2 justify-between rounded-lg'
+            : 'w-full p-2 px-2.5 justify-start rounded-lg'
         } text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition font-medium disabled:opacity-50`}
         title={compact ? (translating ? 'Translating...' : selectedLang.native) : undefined}
       >
@@ -83,7 +83,7 @@ const LangPicker = ({ compact }) => {
           <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin block" />
         ) : (
           <>
-            <Globe size={16} className="text-primary flex-shrink-0" />
+            <Globe size={20} className="text-primary flex-shrink-0" />
             {!compact && (
               <>
                 <span className="text-sm flex-1 text-left">
@@ -148,8 +148,8 @@ const DarkModeButton = ({ mobile = false }) => {
     );
   }
   return (
-    <button onClick={toggle} className="flex items-center justify-center gap-2 w-full p-2 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-      {isDark ? <><Sun size={20} /> Light Mode</> : <><Moon size={20} /> Dark Mode</>}
+    <button onClick={toggle} className="flex items-center justify-start gap-3 w-full p-2 px-2.5 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+      {isDark ? <><Sun size={20} className="text-yellow-500" /> Light Mode</> : <><Moon size={20} className="text-gray-500" /> Dark Mode</>}
     </button>
   );
 };
