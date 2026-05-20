@@ -190,9 +190,18 @@ const Sidebar = () => {
       {/* ── Mobile Top Bar ── */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md border-b dark:border-gray-800/80 flex items-center justify-between px-4 z-[9999] shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">WET</span>
+          <div className="p-1.5 bg-gradient-to-tr from-primary to-purple-600 rounded-lg text-white shadow-sm flex-shrink-0">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
+              <path d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="#fff" fillOpacity="0.8"/>
+            </svg>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent leading-none">WET</span>
+            <span className="text-[7px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none mt-0.5">Wedding Expense Tracker</span>
+          </div>
           {!user && (
-            <span className="text-[9px] text-primary font-bold uppercase tracking-wider bg-purple-50 dark:bg-purple-950/40 px-1.5 py-0.5 rounded border border-primary/10">Demo</span>
+            <span className="text-[9px] text-primary font-bold uppercase tracking-wider bg-purple-50 dark:bg-purple-950/40 px-1.5 py-0.5 rounded border border-primary/10 ml-1">Demo</span>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -223,8 +232,22 @@ const Sidebar = () => {
       {/* ── Desktop Sidebar ── */}
       <div className="w-64 bg-white dark:bg-gray-900 h-screen shadow-md flex-col hidden md:flex sticky top-0 transition-colors duration-300">
         <div className="p-6 border-b dark:border-gray-800">
-          <h2 className="text-2xl font-bold text-primary">WET</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Wedding Expense Tracker</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-tr from-primary to-purple-600 rounded-xl text-white shadow-md shadow-primary/20 flex-shrink-0">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
+                <path d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="#fff" fillOpacity="0.8"/>
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent leading-none mb-1">
+                WET
+              </h2>
+              <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block leading-tight">
+                Wedding Expense Tracker
+              </span>
+            </div>
+          </div>
           {user && (
             <button 
               onClick={() => setIsWeddingModalOpen(true)}

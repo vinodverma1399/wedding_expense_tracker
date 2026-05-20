@@ -45,13 +45,21 @@ const Login = () => {
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-500/20 rounded-full blur-[100px] animate-pulse"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/20 rounded-full blur-[100px] animate-pulse"></div>
         
-        <div className="relative z-10 flex items-center gap-2">
+        <div className="relative z-10 flex items-center gap-3">
           <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/20">
-            <Heart className="text-pink-400 fill-pink-400" size={28} />
+            <svg className="w-7 h-7 text-pink-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
+              <path d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="#fff" fillOpacity="0.8"/>
+            </svg>
           </div>
-          <span className="text-2xl font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-pink-100 to-pink-200">
-            WET
-          </span>
+          <div>
+            <span className="text-2xl font-black tracking-wider block bg-clip-text text-transparent bg-gradient-to-r from-white via-pink-100 to-pink-200 leading-none">
+              WET
+            </span>
+            <span className="text-[9px] font-bold text-pink-200/70 uppercase tracking-widest block mt-1">
+              Wedding Expense Tracker
+            </span>
+          </div>
         </div>
 
         <div className="relative z-10 my-auto max-w-lg">
@@ -91,11 +99,17 @@ const Login = () => {
           
           {/* Header */}
           <div className="text-center lg:text-left">
-            <div className="lg:hidden flex justify-center items-center gap-2 mb-4">
+            <div className="lg:hidden flex justify-center items-center gap-3 mb-6">
               <div className="p-2 bg-primary/10 rounded-xl">
-                <Heart className="text-primary fill-primary" size={24} />
+                <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
+                  <path d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="#fff" fillOpacity="0.8"/>
+                </svg>
               </div>
-              <span className="text-xl font-bold tracking-wider dark:text-white">WET</span>
+              <div className="text-left">
+                <span className="text-lg font-bold tracking-wider block dark:text-white leading-none">WET</span>
+                <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block mt-0.5">Wedding Expense Tracker</span>
+              </div>
             </div>
             <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               {t('welcomeBack')}
