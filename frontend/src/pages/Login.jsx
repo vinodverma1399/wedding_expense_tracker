@@ -47,17 +47,7 @@ const Login = () => {
         
         <div className="relative z-10 flex items-center gap-3">
           <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 flex items-center justify-center">
-            <svg className="w-7 h-7 text-pink-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="logo-grad-login" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f472b6" />
-                  <stop offset="100%" stopColor="#db2777" />
-                </linearGradient>
-              </defs>
-              <path d="M12 2L9 5h6l-3-3z" fill="url(#logo-grad-login)" />
-              <path d="M9 5l3 4 3-4H9z" fill="url(#logo-grad-login)" opacity="0.85" />
-              <circle cx="12" cy="13" r="5" stroke="url(#logo-grad-login)" strokeWidth="2.2" fill="none" />
-            </svg>
+            <Heart className="w-7 h-7 text-pink-400 fill-pink-400" />
           </div>
           <div>
             <span className="text-2xl font-black tracking-wider block bg-clip-text text-transparent bg-gradient-to-r from-white via-pink-100 to-pink-200 leading-none">
@@ -108,17 +98,7 @@ const Login = () => {
           <div className="text-center lg:text-left">
             <div className="lg:hidden flex justify-center items-center gap-3 mb-6">
               <div className="p-2 bg-primary/10 rounded-xl flex items-center justify-center">
-                <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="logo-grad-login-mobile" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#8B5CF6" />
-                      <stop offset="100%" stopColor="#EC4899" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M12 2L9 5h6l-3-3z" fill="url(#logo-grad-login-mobile)" />
-                  <path d="M9 5l3 4 3-4H9z" fill="url(#logo-grad-login-mobile)" opacity="0.85" />
-                  <circle cx="12" cy="13" r="5" stroke="url(#logo-grad-login-mobile)" strokeWidth="2.2" fill="none" />
-                </svg>
+                <Heart className="w-5 h-5 text-primary fill-primary/20" />
               </div>
               <div className="text-left">
                 <span className="text-lg font-bold tracking-wider block dark:text-white leading-none">WET</span>
